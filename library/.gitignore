@@ -1,0 +1,17 @@
+*.o
+*.a
+sfetch
+sfetch_test
+a.out
+.DS_Store
+*~
+tags
+TAGS
+*.cscope
+*.orig
+core*
+
+GPATH
+GTAGS
+GRTAGS
+doc/*
