@@ -1,6 +1,5 @@
 #include "S3Downloader.h"
 
-
 //#define ASMAIN
 
 #define ASMAIN
@@ -8,64 +7,60 @@
 #include <iostream>
 //#include "spdlog/spdlog.h"
 
-void printdata(const char* url, uint64_t len, S3Credential* pcred);
+void printdata(const char *url, uint64_t len, S3Credential *pcred);
 
-int main()
-{
+int main() {
     S3Credential cred;
     cred.keyid = "AKIAIAFSMJUMQWXB2PUQ";
     cred.secret = "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";
 
-    const char* bucket = "metro.pivotal.io";
-    const char* prefix = "data";
-    const char* region = "us-west-2";
+    const char *bucket = "metro.pivotal.io";
+    const char *prefix = "data";
+    const char *region = "us-west-2";
 
     int segid = 3;
     int total_segs = 4;
 
-    ListBucketResult* r = ListBucket("s3-us-west-2.amazonaws.com", bucket, prefix, cred);
+    ListBucketResult *r =
+        ListBucket("s3-us-west-2.amazonaws.com", bucket, prefix, cred);
 
     char urlbuf[256];
 
-    vector<BucketContent*>::iterator i;
-    for( i = r->contents.begin(); i != r->contents.end(); i++ ) {
-        BucketContent* p = *i;
-        sprintf(urlbuf, "http://s3-us-west-2.amazonaws.com/%s/%s", bucket,p->Key());
+    vector<BucketContent *>::iterator i;
+    for (i = r->contents.begin(); i != r->contents.end(); i++) {
+        BucketContent *p = *i;
+        sprintf(urlbuf, "http://s3-us-west-2.amazonaws.com/%s/%s", bucket,
+                p->Key());
         printf("%s, %d\n", urlbuf, p->Size());
-        //printdata(urlbuf, p->Size(), &cred);
+        // printdata(urlbuf, p->Size(), &cred);
     }
 
     delete r;
     return 0;
 }
 
+#endif  // ASMAIN
 
-#endif // ASMAIN
-
-
-
-void printdata(const char* url, uint64_t len, S3Credential* pcred) {
+void printdata(const char *url, uint64_t len, S3Credential *pcred) {
     /* code */
-    Downloader* f = new Downloader(4);
+    Downloader *f = new Downloader(4);
     f->init(url, len, 1 * 1024 * 1024, pcred);
-    char* data = (char*) malloc(4096);
-    if(!data) {
+    char *data = (char *)malloc(4096);
+    if (!data) {
         return;
     }
-    len     = 4096;
+    len = 4096;
 
-    while(f->get(data, len)) {
+    while (f->get(data, len)) {
         fprintf(stdout, "%.*s", (int)len, data);
         len = 4096;
     }
-    if(len > 0)
-        fprintf(stdout, "%.*s", (int)len, data);
+    if (len > 0) fprintf(stdout, "%.*s", (int)len, data);
 
     free(data);
     f->destroy();
     delete f;
 }
-
 
 #if 0
 
@@ -107,4 +102,4 @@ int main(int argc, char const *argv[])
     return 0;
 }
 
-#endif // ASMAIN
+#endif  // ASMAIN

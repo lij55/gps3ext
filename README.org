@@ -1,3 +1,7 @@
 * Build
-* Run Test
 
+=make= to build the extension for GPDB.
+
+=make -f Makefile.standalone= to build the standalone application.
+
+* Run Test

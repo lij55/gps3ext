@@ -1,7 +1,6 @@
 #ifndef __HTTPCOMMON_H_
 #define __HTTPCOMMON_H_
 
-
 static const char* DATE_HEADER = "date";
 static const char* AWS_DATE_HEADER = "X-Amz-Date";
 static const char* AWS_SECURITY_TOKEN = "X-Amz-Security-Token";
@@ -19,7 +18,4 @@ static const char* HOST_HEADER = "host";
 static const char* AMZ_TARGET_HEADER = "x-amz-target";
 static const char* X_AMZ_EXPIRES_HEADER = "X-Amz-Expires";
 
-
-
-
-#endif // __HTTPCOMMON_H_
+#endif  // __HTTPCOMMON_H_

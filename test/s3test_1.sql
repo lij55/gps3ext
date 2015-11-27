@@ -5,9 +5,9 @@
 
 -- create the database functions
 CREATE OR REPLACE FUNCTION write_to_s3() RETURNS integer AS
-   '$libdir/gpexts3.so', 's3_export' LANGUAGE C STABLE;
+   '$libdir/gps3ext.so', 's3_export' LANGUAGE C STABLE;
 CREATE OR REPLACE FUNCTION read_from_s3() RETURNS integer AS 
-    '$libdir/gpexts3.so', 's3_import' LANGUAGE C STABLE;
+    '$libdir/gps3ext.so', 's3_import' LANGUAGE C STABLE;
 
 -- declare the protocol name along with in/out funcs
 CREATE PROTOCOL s3ext (
