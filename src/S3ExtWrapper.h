@@ -28,7 +28,7 @@ struct S3Protocol_t {
     Downloader* filedownloader;
     ListBucketResult* keylist;
     string getKeyURL(const string& key);
-    Downloader* getNextDownloader();
+    void getNextDownloader();
 };
 
 extern "C" S3Protocol_t* CreateExtWrapper(const char* url);

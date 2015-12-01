@@ -18,7 +18,7 @@ S3Protocol_t::S3Protocol_t(const char *url) {
     this->prefix = "data/";
     this->schema = "http";
 
-    this->paranum = 4;  // get from config
+    this->paranum = 1;  // get from config
 
     filedownloader = NULL;
     keylist = NULL;
@@ -40,21 +40,23 @@ string S3Protocol_t::getKeyURL(const string &key) {
     return sstr.str();
 }
 
-Downloader *S3Protocol_t::getNextDownloader() {
+void S3Protocol_t::getNextDownloader() {
+	EXTLOG("download next file\n");
     if (this->filedownloader) {  // reset old downloader
         filedownloader->destroy();
         delete this->filedownloader;
         this->filedownloader = NULL;
     }
 
-    this->contentindex += this->segnum;
-
     if (this->contentindex >= this->keylist->contents.size()) {
-        return NULL;
+        return;
     }
-    filedownloader = new Downloader(this->paranum);
+    this->filedownloader = new Downloader(this->paranum);
 
-    if (!filedownloader) return NULL;
+    if (!this->filedownloader) {
+		EXTLOG("Create filedownloader fail");
+		return;
+	}
     BucketContent *c = this->keylist->contents[this->contentindex];
     string keyurl = this->getKeyURL(c->Key());
 	EXTLOG("%s:%lld\n", keyurl.c_str(), c->Size());
@@ -63,9 +65,10 @@ Downloader *S3Protocol_t::getNextDownloader() {
                               &this->cred)) {
         delete this->filedownloader;
         this->filedownloader = NULL;
-    };
-
-    return filedownloader;
+    } else { // move to next file
+		this->contentindex += this->segnum;
+	}
+    return;
 }
 
 bool S3Protocol_t::Init(int segid, int segnum) {
@@ -84,8 +87,8 @@ bool S3Protocol_t::Init(int segid, int segnum) {
                                this->prefix.c_str(), this->cred);
     if (!this->keylist) return false;
 
-    filedownloader = this->getNextDownloader();
-    if (!filedownloader)
+    this->getNextDownloader();
+    if (!this->filedownloader)
         return false;
     else
         return true;
@@ -93,7 +96,7 @@ bool S3Protocol_t::Init(int segid, int segnum) {
 
 // len == 0 means EOF for GPDB
 bool S3Protocol_t::Get(char *data, size_t &len) {
-    if (!filedownloader) {
+    if (!this->filedownloader) {
         // not initialized?
         return false;
     }
@@ -103,14 +106,15 @@ RETRY:
 	EXTLOG("getlen is %d\n", len);
     bool result = filedownloader->get(data, buflen);
     if (!result) {  // read fail
+		EXTLOG("get data from filedownloader fail\n");
         return false;
     }
-
+	EXTLOG("getlen is %lld\n", buflen);
     if (buflen == 0) {
         // change to next downloader
-        filedownloader = this->getNextDownloader();
-        if (filedownloader) {  // download next file
-			printf("retry");
+        this->getNextDownloader();
+        if (this->filedownloader) {  // download next file
+			EXTLOG("retry\n");
             goto RETRY;
         }
     }
@@ -120,6 +124,13 @@ RETRY:
 
 bool S3Protocol_t::Destroy() {
     // reset filedownloader
+	if(this->filedownloader) {
+		this->filedownloader->destroy();
+		delete this->filedownloader;
+	}
     // Free keylist
+	if(this->keylist) {
+		delete this->keylist;
+	}
     return true;
 }

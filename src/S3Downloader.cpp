@@ -67,8 +67,7 @@ BlockingBuffer::~BlockingBuffer() {
 bool BlockingBuffer::Init() {
     this->bufferdata = (char *)malloc(this->bufcap);
     if (!this->bufferdata) {
-        // malloc fail
-        std::cout << "alloc error" << std::endl;
+        EXTLOG("alloc error\n");
         return false;
     }
     pthread_mutex_init(&this->stat_mutex, NULL);
@@ -116,20 +115,17 @@ uint64_t BlockingBuffer::Fill() {
     this->realsize = 0;
     while (this->realsize < this->bufcap) {
         if (leftlen != 0) {
-            // readlen = this->fetchdata(offset, this->bufferdata +
-            // this->realsize,
-            // this->bufcap - this->realsize);
             readlen = this->fetchdata(offset, this->bufferdata + this->realsize,
                                       leftlen);
-            // std::cout<<"return "<<readlen<<" from libcurl\n";
+			EXTLOG("return %lld from libcurl\n",readlen);
         } else {
             readlen = 0;  // EOF
         }
         if (readlen == 0) {  // EOF!!
-            if (this->realsize == 0) {
+            //if (this->realsize == 0) {
                 this->eof = true;
-            }
-            std::cout << "reach end of file ?" << std::endl;
+				//}
+            EXTLOG("reach end of file\n");
             break;
         } else if (readlen == -1) {  // Error, network error or sth.
             // perror, retry
@@ -171,11 +167,11 @@ BlockingBuffer *BlockingBuffer::CreateBuffer(const char *url, OffsetMgr *o,
 void *DownloadThreadfunc(void *data) {
     BlockingBuffer *buffer = (BlockingBuffer *)data;
     size_t filled_size = 0;
-    void *pp = (void *)pthread_self();
+    // void *pp = (void *)pthread_self();
     // assert offset > 0
     do {
         filled_size = buffer->Fill();
-        std::cout << "Fillsize is " << filled_size << " of " << pp << std::endl;
+        EXTLOG("Fillsize is %lld\n", filled_size);
         if (buffer->EndOfFile()) break;
         if (filled_size == -1) {  // Error
             // retry?
@@ -185,7 +181,7 @@ void *DownloadThreadfunc(void *data) {
                 continue;
         }
     } while (1);
-    std::cout << "quit\n";
+    EXTLOG("quit download\n");
     return NULL;
 }
 
@@ -197,12 +193,12 @@ Downloader::Downloader(uint8_t part_num) : num(part_num) {
 bool Downloader::init(const char *url, uint64_t size, uint64_t chunksize,
                       S3Credential *pcred) {
     this->o = new OffsetMgr(size, chunksize);
-	printf("chunksize is %d", chunksize);
+	EXTLOG("chunksize is %d\n", chunksize);
     for (int i = 0; i < this->num; i++) {
         this->buffers[i] = BlockingBuffer::CreateBuffer(
             url, o, pcred);  // decide buffer according to url
         if (!this->buffers[i]->Init()) {
-            std::cerr << "init fail" << std::endl;
+            EXTLOG("Blocking buffer init fail\n");
         }
         pthread_create(&this->threads[i], NULL, DownloadThreadfunc,
                        this->buffers[i]);
@@ -214,6 +210,11 @@ bool Downloader::init(const char *url, uint64_t size, uint64_t chunksize,
 
 bool Downloader::get(char *data, uint64_t &len) {
     uint64_t filelen = this->o->Size();
+	if (this->readlen == filelen) {
+		len = 0;
+		return true;
+	}
+	
     BlockingBuffer *buf = buffers[this->chunkcount % this->num];
     uint64_t tmplen = buf->Read(data, len);
     this->readlen += tmplen;
@@ -221,13 +222,10 @@ bool Downloader::get(char *data, uint64_t &len) {
         this->chunkcount++;
         len = tmplen;
         if (buf->Error()) {
+			EXTLOG("buffer error");
             return false;
         }
     }
-    //if (this->readlen == filelen) {
-    //    if (buf->EndOfFile()) 
-	//		return false;
-    //}
     return true;
 }
 
@@ -262,7 +260,7 @@ static uint64_t WriterCallback(void *contents, uint64_t size, uint64_t nmemb,
 HTTPFetcher::HTTPFetcher(const char *url, OffsetMgr *o)
     : BlockingBuffer(url, o), urlparser(url) {
     this->curl = curl_easy_init();
-    // curl_easy_setopt(this->curl, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(this->curl, CURLOPT_VERBOSE, 1L);
     // curl_easy_setopt(curl, CURLOPT_PROXY, "127.0.0.1:8080");
     curl_easy_setopt(this->curl, CURLOPT_WRITEFUNCTION, WriterCallback);
     curl_easy_setopt(this->curl, CURLOPT_FORBID_REUSE, 1L);

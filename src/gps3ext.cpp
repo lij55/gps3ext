@@ -86,7 +86,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 	EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
     if (datlen > 0) {
         nread = datlen;
-        if (myData->Get(data, nread))
+        if (!myData->Get(data, nread))
             ereport(ERROR, (0, errmsg("s3_import: could not read data")));
 		EXTLOG("read %d data from S3\n", nread);
     }
