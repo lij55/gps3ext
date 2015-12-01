@@ -21,4 +21,7 @@ bool sha256hmac(char* str, char out[65], char* secret);
 char* SignatureV2(const char* date, const char* path, const char* key);
 char* SignatureV4(const char* date, const char* path, const char* key);
 
+void InitLog();
+void EXTLOG(const char *fmt, ...);
+
 #endif  // _UTILFUNCTIONS_

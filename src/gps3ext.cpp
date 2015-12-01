@@ -11,7 +11,7 @@
 #include "fmgr.h"
 
 #include "S3ExtWrapper.h"
-
+#include "utils.h"
 /* Do the module magic dance */
 
 PG_MODULE_MAGIC;
@@ -41,7 +41,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
     /* Get our internal description of the protocol */
     myData = (S3Protocol_t *)EXTPROTOCOL_GET_USER_CTX(fcinfo);
-
+	EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
     if (EXTPROTOCOL_IS_LAST_CALL(fcinfo)) {
         if (!myData->Destroy()) {
             ereport(ERROR, (0, errmsg("Cleanup S3 extention failed")));
@@ -52,24 +52,27 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
     if (myData == NULL) {
         /* first call. do any desired init */
-
+		InitLog();
         const char *p_name = "s3ext";
         char *url = EXTPROTOCOL_GET_URL(fcinfo);
 
-        myData = CreateExtWrapper(url);
+        myData = CreateExtWrapper("http://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/");
+
+		EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
+
         if (!myData || !myData->Init(0, 1)) {
             if (myData) delete myData;
             ereport(ERROR, (0, errmsg("Init S3 extension fail")));
         }
         /*
-        if(strcasecmp(parsed_url->protocol, p_name) != 0) {
-                elog(ERROR, "internal error: s3prot called with a different
-        protocol
-        (%s)",
-                                        parsed_url->protocol);
-        }
+		  if(strcasecmp(parsed_url->protocol, p_name) != 0) {
+		  elog(ERROR, "internal error: s3prot called with a different
+		  protocol
+		  (%s)",
+		  parsed_url->protocol);
+		  }
         */
-
+		
         EXTPROTOCOL_SET_USER_CTX(fcinfo, myData);
     }
 
@@ -80,11 +83,12 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
     data = EXTPROTOCOL_GET_DATABUF(fcinfo);
     datlen = EXTPROTOCOL_GET_DATALEN(fcinfo);
-
+	EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
     if (datlen > 0) {
         nread = datlen;
         if (myData->Get(data, nread))
             ereport(ERROR, (0, errmsg("s3_import: could not read data")));
+		EXTLOG("read %d data from S3\n", nread);
     }
 
     PG_RETURN_INT32((int)nread);

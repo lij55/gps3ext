@@ -197,6 +197,7 @@ Downloader::Downloader(uint8_t part_num) : num(part_num) {
 bool Downloader::init(const char *url, uint64_t size, uint64_t chunksize,
                       S3Credential *pcred) {
     this->o = new OffsetMgr(size, chunksize);
+	printf("chunksize is %d", chunksize);
     for (int i = 0; i < this->num; i++) {
         this->buffers[i] = BlockingBuffer::CreateBuffer(
             url, o, pcred);  // decide buffer according to url
@@ -208,6 +209,7 @@ bool Downloader::init(const char *url, uint64_t size, uint64_t chunksize,
     }
     readlen = 0;
     chunkcount = 0;
+	return true;
 }
 
 bool Downloader::get(char *data, uint64_t &len) {
@@ -222,9 +224,10 @@ bool Downloader::get(char *data, uint64_t &len) {
             return false;
         }
     }
-    if (this->readlen == filelen) {
-        if (buf->EndOfFile()) return false;
-    }
+    //if (this->readlen == filelen) {
+    //    if (buf->EndOfFile()) 
+	//		return false;
+    //}
     return true;
 }
 

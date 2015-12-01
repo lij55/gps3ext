@@ -1,4 +1,13 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <cstring>
+#include <cstdarg>
+#include <cstdio>
+#include <unistd.h>
+
 #include <time.h>
 #include <string.h>
 #include <openssl/sha.h>
@@ -176,4 +185,28 @@ CURL *CreateCurlHandler(const char *path) {
         return NULL;
     }
     return curl;
+}
+
+static int logsock = -1;
+static struct sockaddr_in si_logserver;
+
+void InitLog() {
+	if(logsock == -1) {
+		si_logserver.sin_family = AF_INET;
+		si_logserver.sin_port = htons(1111);
+		if (inet_aton("127.0.0.1", &si_logserver.sin_addr) == 0) { //error
+			// log error here
+			return;
+		}
+		logsock=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	}
+}
+void EXTLOG(const char *fmt, ...) {
+	char buf[1024];
+	va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, 1023, fmt, args);
+    va_end(args);
+	buf[1023]=0;
+	sendto(logsock, buf, strlen(buf) , 0 , (struct sockaddr *) &si_logserver, sizeof(sockaddr_in));        
 }

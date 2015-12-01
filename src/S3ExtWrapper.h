@@ -31,6 +31,6 @@ struct S3Protocol_t {
     Downloader* getNextDownloader();
 };
 
-S3Protocol_t* CreateExtWrapper(const char* url);
+extern "C" S3Protocol_t* CreateExtWrapper(const char* url);
 
 #endif

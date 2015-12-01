@@ -1,9 +1,10 @@
 #include "S3ExtWrapper.h"
+#include "utils.h"
 
 #include "sstream"
 using std::stringstream;
 
-S3Protocol_t *CreateExtData(const char *url) {
+S3Protocol_t *CreateExtWrapper(const char *url) {
     S3Protocol_t *ret = new S3Protocol_t(url);
     return ret;
 }
@@ -56,6 +57,7 @@ Downloader *S3Protocol_t::getNextDownloader() {
     if (!filedownloader) return NULL;
     BucketContent *c = this->keylist->contents[this->contentindex];
     string keyurl = this->getKeyURL(c->Key());
+	EXTLOG("%s:%lld\n", keyurl.c_str(), c->Size());
     uint64_t chunksize = 5 * 1024 * 1024;
     if (!filedownloader->init(keyurl.c_str(), c->Size(), chunksize,
                               &this->cred)) {
@@ -70,15 +72,14 @@ bool S3Protocol_t::Init(int segid, int segnum) {
     // Validate url first
 
     // set segment id and num
-    this->segid = 0;   // fake
-    this->segnum = 1;  // fake
+    this->segid = segid;   // fake
+    this->segnum = segnum;  // fake
     this->contentindex = this->segid;
 
     // Create bucket file list
     stringstream sstr;
-    sstr << this->schema << "://"
-         << "s3-" << this->region << ".amazonaws.com/";
-
+    sstr << "s3-" << this->region << ".amazonaws.com";
+	EXTLOG("%s\n", sstr.str().c_str());
     this->keylist = ListBucket(sstr.str().c_str(), this->bucket.c_str(),
                                this->prefix.c_str(), this->cred);
     if (!this->keylist) return false;
@@ -99,6 +100,7 @@ bool S3Protocol_t::Get(char *data, size_t &len) {
     uint64_t buflen;
 RETRY:
     buflen = len;
+	EXTLOG("getlen is %d\n", len);
     bool result = filedownloader->get(data, buflen);
     if (!result) {  // read fail
         return false;
@@ -108,6 +110,7 @@ RETRY:
         // change to next downloader
         filedownloader = this->getNextDownloader();
         if (filedownloader) {  // download next file
+			printf("retry");
             goto RETRY;
         }
     }
