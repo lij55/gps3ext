@@ -1,11 +1,11 @@
-GTEST_DIR=gtest
+GTEST_DIR = gtest
 
-CPP=g++
-CFLAGS= -g -std=c++0x -fPIC
+CPP = g++
+CFLAGS = -g -std=c++11 -fPIC
 INCLUDES = -Isrc -Isrc/lib -I/usr/include/libxml2
-LDFLAGS=-lpthread -lcrypto -lcurl -lxml2
+LDFLAGS = -lpthread -lcrypto -lcurl -lxml2
 
-sources = src/S3Downloader.cpp src/utils.cpp src/lib/http_parser.cpp src/standalone.cpp src/S3Common.cpp
+sources = src/S3Downloader.cpp src/utils.cpp src/lib/http_parser.cpp src/standalone.cpp src/S3Common.cpp src/S3Uploader.cpp src/S3Operations.cpp
 testcources = src/utils_test.cpp src/OffsetMgr_test.cpp src/URLParser_test.cpp src/lib/http_parser.cpp
 
 objects = $(sources:.cpp=.o)
@@ -36,10 +36,8 @@ gtest_main.o : $(GTEST_SRCS_)
 gtest_main.a : gtest-all.o gtest_main.o
 	$(AR) $(ARFLAGS) $@ $^
 
-.PHONY: test clean
-
 build: $(objects)
-	g++ -o $(app) $(objects) $(csources:.c=.o) $(LDFLAGS)
+	g++ -o $(app) $(objects) $(CFLAGS) $(LDFLAGS)
 
 %.o: %.cpp
 	$(CPP) $(CFLAGS) $(INCLUDES) -c $< -o $@
@@ -64,3 +62,5 @@ style:
 
 format:
 	clang-format -style="{BasedOnStyle: Google, IndentWidth: 4}" -i src/*.cpp src/*.h
+
+.PHONY: test clean tags lint style format

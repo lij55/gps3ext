@@ -13,12 +13,14 @@
 
 using std::stringstream;
 
-bool SignGetV2(HeaderContent *h, const char *path, const S3Credential &cred) {
+bool SignGETv2(HeaderContent *h, const char *path, const S3Credential &cred) {
     char timestr[64];
-    char line[256];
+
+    // CONTENT_LENGTH is not a part of StringToSign
+    h->Add(CONTENTLENGTH, "0");
+
     gethttpnow(timestr);
     h->Add(DATE, timestr);
-    h->Add(CONTENTLENGTH, "0");
     stringstream sstr;
     sstr << "GET\n\n\n" << timestr << "\n" << path;
     char *tmpbuf = sha1hmac(sstr.str().c_str(), cred.secret.c_str());
@@ -29,6 +31,88 @@ bool SignGetV2(HeaderContent *h, const char *path, const S3Credential &cred) {
     sstr << "AWS " << cred.keyid << ":" << signature;
     free(signature);
     h->Add(AUTHORIZATION, sstr.str().c_str());
+
+    return true;
+}
+
+bool SignPUTv2(HeaderContent *h, const char *path, const S3Credential &cred) {
+    char timestr[64];
+    string typestr;
+
+    gethttpnow(timestr);
+    h->Add(DATE, timestr);
+    stringstream sstr;
+    h->Read(CONTENTTYPE, &typestr);
+    sstr << "PUT\n\n" << typestr << "\n" << timestr << "\n" << path;
+    char *tmpbuf = sha1hmac(sstr.str().c_str(), cred.secret.c_str());
+    int len = strlen(tmpbuf);
+    char *signature = Base64Encode(tmpbuf, len);
+    sstr.clear();
+    sstr.str("");
+    sstr << "AWS " << cred.keyid << ":" << signature;
+    free(signature);
+    h->Add(AUTHORIZATION, sstr.str().c_str());
+
+    return true;
+}
+
+bool SignPOSTv2(HeaderContent *h, const char *path, const S3Credential &cred) {
+    char timestr[64];
+    string md5str;
+    string typestr;
+
+    gethttpnow(timestr);
+    h->Add(DATE, timestr);
+    stringstream sstr;
+    h->Read(CONTENTMD5, &md5str);
+    h->Read(CONTENTTYPE, &typestr);
+    sstr << "POST\n" << md5str << "\n" << typestr << "\n" << timestr << "\n"
+         << path;
+    char *tmpbuf = sha1hmac(sstr.str().c_str(), cred.secret.c_str());
+    int len = strlen(tmpbuf);
+    char *signature = Base64Encode(tmpbuf, len);
+    sstr.clear();
+    sstr.str("");
+    sstr << "AWS " << cred.keyid << ":" << signature;
+    free(signature);
+    h->Add(AUTHORIZATION, sstr.str().c_str());
+
+    return true;
+}
+
+bool SignLISTv2(HeaderContent *h, const char *path, const S3Credential &cred) {
+    return SignGETv2(h, path, cred);
+}
+
+bool SignFETCHv2(HeaderContent *h, const char *path, const S3Credential &cred) {
+    int len = strlen(path);
+    char path_with_acl[len + 4];
+
+    strncpy(path_with_acl, path, len);
+
+    return SignGETv2(h, strncat(path_with_acl, "?acl", 4), cred);
+}
+
+bool SignDELETEv2(HeaderContent *h, const char *path,
+                  const S3Credential &cred) {
+    char timestr[64];
+
+    // CONTENT_LENGTH is not a part of StringToSign
+    h->Add(CONTENTLENGTH, "0");
+
+    gethttpnow(timestr);
+    h->Add(DATE, timestr);
+    stringstream sstr;
+    sstr << "DELETE\n\n\n" << timestr << "\n" << path;
+    char *tmpbuf = sha1hmac(sstr.str().c_str(), cred.secret.c_str());
+    int len = strlen(tmpbuf);
+    char *signature = Base64Encode(tmpbuf, len);
+    sstr.clear();
+    sstr.str("");
+    sstr << "AWS " << cred.keyid << ":" << signature;
+    free(signature);
+    h->Add(AUTHORIZATION, sstr.str().c_str());
+
     return true;
 }
 
@@ -42,6 +126,12 @@ const char *GetFieldString(HeaderField f) {
             return "Date";
         case CONTENTLENGTH:
             return "Content-Length";
+        case CONTENTMD5:
+            return "Content-MD5";
+        case CONTENTTYPE:
+            return "Content-Type";
+        case EXPECT:
+            return "Expect";
         case AUTHORIZATION:
             return "Authorization";
         default:
@@ -52,6 +142,15 @@ const char *GetFieldString(HeaderField f) {
 bool HeaderContent::Add(HeaderField f, const std::string &v) {
     if (!v.empty()) {
         this->fields[f] = std::string(v);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool HeaderContent::Read(HeaderField f, string *dst) {
+    if (!this->fields[f].empty()) {
+        *dst += this->fields[f];
         return true;
     } else {
         return false;

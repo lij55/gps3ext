@@ -41,7 +41,7 @@ string S3Protocol_t::getKeyURL(const string &key) {
 }
 
 void S3Protocol_t::getNextDownloader() {
-	EXTLOG("download next file\n");
+    EXTLOG("download next file\n");
     if (this->filedownloader) {  // reset old downloader
         filedownloader->destroy();
         delete this->filedownloader;
@@ -54,20 +54,20 @@ void S3Protocol_t::getNextDownloader() {
     this->filedownloader = new Downloader(this->paranum);
 
     if (!this->filedownloader) {
-		EXTLOG("Create filedownloader fail");
-		return;
-	}
+        EXTLOG("Create filedownloader fail");
+        return;
+    }
     BucketContent *c = this->keylist->contents[this->contentindex];
     string keyurl = this->getKeyURL(c->Key());
-	EXTLOG("%s:%lld\n", keyurl.c_str(), c->Size());
+    EXTLOG("%s:%lld\n", keyurl.c_str(), c->Size());
     uint64_t chunksize = 5 * 1024 * 1024;
     if (!filedownloader->init(keyurl.c_str(), c->Size(), chunksize,
                               &this->cred)) {
         delete this->filedownloader;
         this->filedownloader = NULL;
-    } else { // move to next file
-		this->contentindex += this->segnum;
-	}
+    } else {  // move to next file
+        this->contentindex += this->segnum;
+    }
     return;
 }
 
@@ -75,14 +75,14 @@ bool S3Protocol_t::Init(int segid, int segnum) {
     // Validate url first
 
     // set segment id and num
-    this->segid = segid;   // fake
+    this->segid = segid;    // fake
     this->segnum = segnum;  // fake
     this->contentindex = this->segid;
 
     // Create bucket file list
     stringstream sstr;
     sstr << "s3-" << this->region << ".amazonaws.com";
-	EXTLOG("%s\n", sstr.str().c_str());
+    EXTLOG("%s\n", sstr.str().c_str());
     this->keylist = ListBucket(sstr.str().c_str(), this->bucket.c_str(),
                                this->prefix.c_str(), this->cred);
     if (!this->keylist) return false;
@@ -103,18 +103,18 @@ bool S3Protocol_t::Get(char *data, size_t &len) {
     uint64_t buflen;
 RETRY:
     buflen = len;
-	EXTLOG("getlen is %d\n", len);
+    EXTLOG("getlen is %d\n", len);
     bool result = filedownloader->get(data, buflen);
     if (!result) {  // read fail
-		EXTLOG("get data from filedownloader fail\n");
+        EXTLOG("get data from filedownloader fail\n");
         return false;
     }
-	EXTLOG("getlen is %lld\n", buflen);
+    EXTLOG("getlen is %lld\n", buflen);
     if (buflen == 0) {
         // change to next downloader
         this->getNextDownloader();
         if (this->filedownloader) {  // download next file
-			EXTLOG("retry\n");
+            EXTLOG("retry\n");
             goto RETRY;
         }
     }
@@ -124,13 +124,13 @@ RETRY:
 
 bool S3Protocol_t::Destroy() {
     // reset filedownloader
-	if(this->filedownloader) {
-		this->filedownloader->destroy();
-		delete this->filedownloader;
-	}
+    if (this->filedownloader) {
+        this->filedownloader->destroy();
+        delete this->filedownloader;
+    }
     // Free keylist
-	if(this->keylist) {
-		delete this->keylist;
-	}
+    if (this->keylist) {
+        delete this->keylist;
+    }
     return true;
 }

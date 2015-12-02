@@ -22,6 +22,6 @@ char* SignatureV2(const char* date, const char* path, const char* key);
 char* SignatureV4(const char* date, const char* path, const char* key);
 
 void InitLog();
-void EXTLOG(const char *fmt, ...);
+void EXTLOG(const char* fmt, ...);
 
 #endif  // _UTILFUNCTIONS_

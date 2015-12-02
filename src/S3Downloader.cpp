@@ -117,14 +117,14 @@ uint64_t BlockingBuffer::Fill() {
         if (leftlen != 0) {
             readlen = this->fetchdata(offset, this->bufferdata + this->realsize,
                                       leftlen);
-			EXTLOG("return %lld from libcurl\n",readlen);
+            EXTLOG("return %lld from libcurl\n", readlen);
         } else {
             readlen = 0;  // EOF
         }
         if (readlen == 0) {  // EOF!!
-            //if (this->realsize == 0) {
-                this->eof = true;
-				//}
+            // if (this->realsize == 0) {
+            this->eof = true;
+            //}
             EXTLOG("reach end of file\n");
             break;
         } else if (readlen == -1) {  // Error, network error or sth.
@@ -193,7 +193,7 @@ Downloader::Downloader(uint8_t part_num) : num(part_num) {
 bool Downloader::init(const char *url, uint64_t size, uint64_t chunksize,
                       S3Credential *pcred) {
     this->o = new OffsetMgr(size, chunksize);
-	EXTLOG("chunksize is %d\n", chunksize);
+    EXTLOG("chunksize is %d\n", chunksize);
     for (int i = 0; i < this->num; i++) {
         this->buffers[i] = BlockingBuffer::CreateBuffer(
             url, o, pcred);  // decide buffer according to url
@@ -205,16 +205,16 @@ bool Downloader::init(const char *url, uint64_t size, uint64_t chunksize,
     }
     readlen = 0;
     chunkcount = 0;
-	return true;
+    return true;
 }
 
 bool Downloader::get(char *data, uint64_t &len) {
     uint64_t filelen = this->o->Size();
-	if (this->readlen == filelen) {
-		len = 0;
-		return true;
-	}
-	
+    if (this->readlen == filelen) {
+        len = 0;
+        return true;
+    }
+
     BlockingBuffer *buf = buffers[this->chunkcount % this->num];
     uint64_t tmplen = buf->Read(data, len);
     this->readlen += tmplen;
@@ -222,7 +222,7 @@ bool Downloader::get(char *data, uint64_t &len) {
         this->chunkcount++;
         len = tmplen;
         if (buf->Error()) {
-			EXTLOG("buffer error");
+            EXTLOG("buffer error");
             return false;
         }
     }
@@ -331,7 +331,7 @@ S3Fetcher::S3Fetcher(const char *url, OffsetMgr *o, const S3Credential &cred)
 }
 
 bool S3Fetcher::processheader() {
-    return SignGetV2(&this->headers, this->urlparser.Path(), this->cred);
+    return SignGETv2(&this->headers, this->urlparser.Path(), this->cred);
 }
 
 bool S3Fetcher::retry(CURLcode c) {
@@ -394,10 +394,10 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
         curl_easy_setopt(curl, CURLOPT_URL, url);
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
-
     } else {
         return NULL;
     }
+
     std::stringstream sstr;
     XMLInfo xml;
     xml.ctxt = NULL;
@@ -409,7 +409,7 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
     sstr << bucket << ".s3.amazonaws.com";
     header->Add(HOST, host);
     UrlParser p(url);
-    SignGetV2(header, p.Path(), cred);
+    SignGETv2(header, p.Path(), cred);
 
     struct curl_slist *chunk = header->GetList();
 
