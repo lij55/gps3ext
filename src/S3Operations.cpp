@@ -14,22 +14,23 @@
 
 #include <string>
 
+static size_t put_read_callback(void *ptr, size_t size, size_t nmemb,
+                                void *stream) {
+    ptr = stream;
+
+    return 0;
+}
+
 bool PutS3Object(const char *host, const char *bucket, const char *url,
-                 const S3Credential &cred, const char *file) {
-    struct stat file_info;
-    FILE *hd_src;
+                 const S3Credential &cred, const char *data,
+                 const uint64_t data_size) {
     char size_str[256];
-
-    /* get the file size of the local file */
-    stat(file, &file_info);
-
-    /* get a FILE * of the same file, could also be made with
-       fdopen() from the previous descriptor, but hey this is just
-       an example! */
-    hd_src = fopen(file, "rb");
 
     CURL *curl = curl_easy_init();
     if (curl) {
+        /* we want to use our own read function */
+        curl_easy_setopt(curl, CURLOPT_READFUNCTION, put_read_callback);
+
         /* enable uploading */
         curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
 
@@ -40,13 +41,12 @@ bool PutS3Object(const char *host, const char *bucket, const char *url,
            name, not only a directory */
         curl_easy_setopt(curl, CURLOPT_URL, url);
 
-        /* now specify which file to upload */
-        curl_easy_setopt(curl, CURLOPT_READDATA, hd_src);
+        /* now specify which file/data to upload */
+        curl_easy_setopt(curl, CURLOPT_READDATA, data);
 
         /* provide the size of the upload, we specicially typecast the value
            to curl_off_t since we must be sure to use the correct data size */
-        curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE,
-                         (curl_off_t)file_info.st_size);
+        curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)data_size);
 
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
@@ -59,10 +59,10 @@ bool PutS3Object(const char *host, const char *bucket, const char *url,
 
     sstr << bucket << ".s3.amazonaws.com";
     header->Add(HOST, host);
-    // TODO detect the real file type, libmagic?
+    // MIME type doesn't matter actually, server wouldn't store it either
     header->Add(CONTENTTYPE, "text/plain");
     header->Add(EXPECT, "100-continue");
-    header->Add(CONTENTLENGTH, std::to_string(file_info.st_size));
+    header->Add(CONTENTLENGTH, std::to_string(data_size));
     UrlParser p(url);
     SignPUTv2(header, p.Path(), cred);
 
@@ -77,7 +77,6 @@ bool PutS3Object(const char *host, const char *bucket, const char *url,
 
     curl_slist_free_all(chunk);
     curl_easy_cleanup(curl);
-    fclose(hd_src); /* close the local file */
 
     return ret;
 }
