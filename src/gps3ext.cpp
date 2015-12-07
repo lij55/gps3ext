@@ -31,7 +31,7 @@ Datum s3_validate_urls(PG_FUNCTION_ARGS);
 Datum s3_import(PG_FUNCTION_ARGS) {
     S3Protocol_t *myData;
     char *data;
-    int datlen;
+    int data_len;
     size_t nread = 0;
 
     /* Must be called via the external table format manager */
@@ -61,7 +61,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
         EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
 
-        if (!myData || !myData->Init(0, 1)) {
+        if (!myData || !myData->Init(0, 1, TO_GET)) {
             if (myData) delete myData;
             ereport(ERROR, (0, errmsg("Init S3 extension fail")));
         }
@@ -83,10 +83,10 @@ Datum s3_import(PG_FUNCTION_ARGS) {
      */
 
     data = EXTPROTOCOL_GET_DATABUF(fcinfo);
-    datlen = EXTPROTOCOL_GET_DATALEN(fcinfo);
+    data_len = EXTPROTOCOL_GET_DATALEN(fcinfo);
     EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
-    if (datlen > 0) {
-        nread = datlen;
+    if (data_len > 0) {
+        nread = data_len;
         if (!myData->Get(data, nread))
             ereport(ERROR, (0, errmsg("s3_import: could not read data")));
         EXTLOG("read %d data from S3\n", nread);
@@ -98,7 +98,64 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 /*
  * Export data out of GPDB.
  */
-Datum s3_export(PG_FUNCTION_ARGS) { PG_RETURN_INT32((int)0); }
+Datum s3_export(PG_FUNCTION_ARGS) {
+    S3Protocol_t *myData;
+    char *data;
+    int data_len;
+    size_t nwrite = 0;
+
+    /* Must be called via the external table format manager */
+    if (!CALLED_AS_EXTPROTOCOL(fcinfo))
+        elog(ERROR,
+             "extprotocol_import: not called by external protocol manager");
+
+    /* Get our internal description of the protocol */
+    myData = (S3Protocol_t *)EXTPROTOCOL_GET_USER_CTX(fcinfo);
+    EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
+    if (EXTPROTOCOL_IS_LAST_CALL(fcinfo)) {
+        if (!myData->Destroy()) {
+            ereport(ERROR, (0, errmsg("Cleanup S3 extention failed")));
+        }
+        delete myData;
+        PG_RETURN_INT32(0);
+    }
+
+    if (myData == NULL) {
+        /* first call. do any desired init */
+        InitLog();
+        const char *p_name = "s3ext";
+        char *url = EXTPROTOCOL_GET_URL(fcinfo);
+
+        myData = CreateExtWrapper(
+            "http://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/");
+
+        EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
+
+        if (!myData || !myData->Init(0, 1, TO_WRITE)) {
+            if (myData) delete myData;
+            ereport(ERROR, (0, errmsg("Init S3 extension fail")));
+        }
+
+        EXTPROTOCOL_SET_USER_CTX(fcinfo, myData);
+    }
+
+    /* =======================================================================
+     *                            DO THE EXPORT
+     * =======================================================================
+     */
+
+    data = EXTPROTOCOL_GET_DATABUF(fcinfo);
+    data_len = EXTPROTOCOL_GET_DATALEN(fcinfo);
+    EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
+    if (data_len > 0) {
+        nwrite = data_len;
+        if (!myData->Write(data, nwrite))
+            ereport(ERROR, (0, errmsg("s3_export: could not write data")));
+        EXTLOG("write %d data from S3\n", nwrite);
+    }
+
+    PG_RETURN_INT32((int)nwrite);
+}
 
 Datum s3_validate_urls(PG_FUNCTION_ARGS) {
     int nurls;

@@ -31,12 +31,12 @@ insert into example (name) values ('hbafe');
 -- create the external table with this protocol:
 --   Use a url that the protocol knows how to parse later (you make it whatever you want)
 CREATE WRITABLE EXTERNAL TABLE ext_w(like example)
-    LOCATION('s3ext://demotextfile.txt')
+    LOCATION('s3://demotextfile.txt')
 FORMAT 'text'
 DISTRIBUTED BY (id);
 
 CREATE READABLE EXTERNAL TABLE ext_r(like example)
-    LOCATION('s3ext://demotextfile.txt')
+    LOCATION('s3://demotextfile.txt')
 FORMAT 'text';
 
 -- Use the external tables
