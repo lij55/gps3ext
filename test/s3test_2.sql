@@ -19,7 +19,7 @@ select * from pg_extprotocol;
 
 drop external table s3example;
 create READABLE external table s3example (date text, time text, open float, high float,
-	low float, volume int) location('s3ext://demotextfile.txt') FORMAT 'csv';
+	low float, volume int) location('s3://demotextfile.txt') FORMAT 'csv';
 
 SELECT count(*) FROM s3example;
 
