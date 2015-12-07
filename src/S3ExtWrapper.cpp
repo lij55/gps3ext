@@ -21,6 +21,7 @@ S3Protocol_t::S3Protocol_t(const char *url) {
     this->paranum = 1;  // get from config
 
     filedownloader = NULL;
+    fileuploader = NULL;
     keylist = NULL;
     segid = -1;
     segnum = -1;
@@ -29,6 +30,7 @@ S3Protocol_t::S3Protocol_t(const char *url) {
 
 S3Protocol_t::~S3Protocol_t() {
     if (filedownloader) delete filedownloader;
+    if (fileuploader) delete filedownloader;
     if (keylist) delete keylist;
 }
 
@@ -71,7 +73,7 @@ void S3Protocol_t::getNextDownloader() {
     return;
 }
 
-bool S3Protocol_t::Init(int segid, int segnum) {
+bool S3Protocol_t::Init(int segid, int segnum, enum s3protocol_purpose get_or_write) {
     // Validate url first
 
     // set segment id and num
@@ -79,19 +81,25 @@ bool S3Protocol_t::Init(int segid, int segnum) {
     this->segnum = segnum;  // fake
     this->contentindex = this->segid;
 
-    // Create bucket file list
     stringstream sstr;
     sstr << "s3-" << this->region << ".amazonaws.com";
     EXTLOG("%s\n", sstr.str().c_str());
-    this->keylist = ListBucket(sstr.str().c_str(), this->bucket.c_str(),
-                               this->prefix.c_str(), this->cred);
-    if (!this->keylist) return false;
 
-    this->getNextDownloader();
-    if (!this->filedownloader)
-        return false;
-    else
-        return true;
+    if (get_or_write == TO_GET) {
+        // Create bucket file list
+        this->keylist = ListBucket(sstr.str().c_str(), this->bucket.c_str(),
+                                   this->prefix.c_str(), this->cred);
+
+        if (!this->keylist) return false;
+
+        this->getNextDownloader();
+
+        if (!this->filedownloader) return false;
+    } else if (get_or_write == TO_WRITE) {
+        if (!this->fileuploader) return false;
+    }
+
+    return true;
 }
 
 // len == 0 means EOF for GPDB
@@ -122,12 +130,34 @@ RETRY:
     return true;
 }
 
+bool S3Protocol_t::Write(char *data, size_t &len) {
+    if (!this->fileuploader) {
+        // not initialized?
+        return false;
+    }
+    EXTLOG("write_len is %d\n", len);
+
+    bool result = fileuploader->write(data, len);
+    if (!result) {
+        EXTLOG("write data via fileuploader fail\n");
+        return false;
+    }
+    EXTLOG("write_len is %lld\n", len);
+    return true;
+}
+
 bool S3Protocol_t::Destroy() {
     // reset filedownloader
     if (this->filedownloader) {
         this->filedownloader->destroy();
         delete this->filedownloader;
     }
+
+    if (this->fileuploader) {
+        this->fileuploader->destroy();
+        delete this->fileuploader;
+    }
+
     // Free keylist
     if (this->keylist) {
         delete this->keylist;
