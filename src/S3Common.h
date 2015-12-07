@@ -23,14 +23,14 @@ enum HeaderField {
     AUTHORIZATION,
 };
 
-enum Method { GET, PUT, POST, LIST, FETCH, DELETE, HEAD };
+enum Method { GET, PUT, POST, DELETE, HEAD };
 
 class HeaderContent {
    public:
     HeaderContent(){};
     ~HeaderContent(){};
     bool Add(HeaderField f, const string& value);
-    bool Read(HeaderField f, string* dst);
+    const char* Get (HeaderField f);
     struct curl_slist* GetList();
 
    private:

@@ -1,12 +1,12 @@
 GTEST_DIR = gtest
 
 CPP = g++
-CFLAGS = -g -std=c++11 -fPIC
+CFLAGS = -g -std=c++0x -fPIC
 INCLUDES = -Isrc -Isrc/lib -I/usr/include/libxml2
 LDFLAGS = -lpthread -lcrypto -lcurl -lxml2
 
 sources = src/S3Downloader.cpp src/utils.cpp src/lib/http_parser.cpp src/standalone.cpp src/S3Common.cpp src/S3Uploader.cpp src/S3Operations.cpp
-testcources = src/utils_test.cpp src/OffsetMgr_test.cpp src/URLParser_test.cpp src/lib/http_parser.cpp
+testcources = src/utils_test.cpp src/S3Downloader_test.cpp src/lib/http_parser.cpp src/S3Common_test.cpp
 
 objects = $(sources:.cpp=.o)
 testobjs = $(testcources:.cpp=.o)

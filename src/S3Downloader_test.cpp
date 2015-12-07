@@ -1,6 +1,5 @@
-
 #include "gtest/gtest.h"
-#include "OffsetMgr.cpp"
+#include "S3Downloader.cpp"
 
 TEST(OffsetMgr, simple) {
     OffsetMgr *o = new OffsetMgr(4096, 1000);
