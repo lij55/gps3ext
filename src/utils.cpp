@@ -186,9 +186,6 @@ CURL *CreateCurlHandler(const char *path) {
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, path);
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-
-    } else {
-        return NULL;
     }
     return curl;
 }
@@ -231,6 +228,8 @@ void InitLog() {
         logsock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     }
 }
+
+
 void EXTLOG(const char *fmt, ...) {
     char buf[1024];
     va_list args;
@@ -245,9 +244,7 @@ void EXTLOG(const char *fmt, ...) {
 
 MD5Calc::MD5Calc() {
 	memset(this->md5, 0, 17);
-	this->result = "";
-
-	MD5_Init(&c);
+	MD5_Init(&this->c);
 }
 
 bool MD5Calc::Update(const char* data, int len) {
@@ -262,6 +259,9 @@ const char* MD5Calc::Get() {
 	for(int i = 0; i < 16; i++)  
 		ss << std::hex << std::setw(2) << std::setfill('0') << (int)this->md5[i];  
 	this->result = ss.str();
-	return this->result.c_str();
 
+	// Reset MD5 context
+	memset(this->md5, 0, 17);
+	MD5_Init(&this->c);
+	return this->result.c_str();
 }
