@@ -529,12 +529,14 @@ ListBucketResult* ListBucket_FakeHTTP(const char* host, const char* bucket) {
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ParserCallback);
 
     CURLcode res = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
 
-    if (res != CURLE_OK)
+    if (res != CURLE_OK) {
         fprintf(stderr, "curl_easy_perform() failed: %s\n",
                 curl_easy_strerror(res));
+		return NULL;
+	}
     xmlParseChunk(xml.ctxt, "", 0, 1);
-    curl_easy_cleanup(curl);
 
     xmlNode *root_element = xmlDocGetRootElement(xml.ctxt->myDoc);
     ListBucketResult *result = new ListBucketResult();

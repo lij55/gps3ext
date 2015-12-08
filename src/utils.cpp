@@ -22,7 +22,10 @@
 
 #include <curl/curl.h>
 
+#include "utils.h"
+
 #include <string>
+#include <sstream>
 using std::string;
 
 bool gethttpnow(char datebuf[65]) {  //('D, d M Y H:i:s T')
@@ -57,7 +60,7 @@ void tolower(char *buf) {
     return;
 }
 
-bool trim(char *out, const char *in, const char *trimed = " \t\r\n") {
+bool trim(char *out, const char *in, const char *trimed) {
     int targetlen;
 
     if (!out || !in) {  // invalid string params
@@ -237,4 +240,28 @@ void EXTLOG(const char *fmt, ...) {
     buf[1023] = 0;
     sendto(logsock, buf, strlen(buf), 0, (struct sockaddr *)&si_logserver,
            sizeof(sockaddr_in));
+}
+
+
+MD5Calc::MD5Calc() {
+	memset(this->md5, 0, 17);
+	this->result = "";
+
+	MD5_Init(&c);
+}
+
+bool MD5Calc::Update(const char* data, int len) {
+	MD5_Update(&this->c, data, len);  
+	return true;
+}
+
+
+const char* MD5Calc::Get() {
+	MD5_Final(this->md5,&c);
+	std::stringstream ss;
+	for(int i = 0; i < 16; i++)  
+		ss << std::hex << std::setw(2) << std::setfill('0') << (int)this->md5[i];  
+	this->result = ss.str();
+	return this->result.c_str();
+
 }

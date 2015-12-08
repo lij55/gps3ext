@@ -24,4 +24,28 @@ char* SignatureV4(const char* date, const char* path, const char* key);
 void InitLog();
 void EXTLOG(const char* fmt, ...);
 
+#include <string>
+using std::string;
+
+#include <openssl/md5.h> 
+
+
+size_t find_Nth(
+				const string & str ,   // where to work
+				unsigned            N ,     // N'th ocurrence
+				const string & find    // what to 'find'
+				);
+
+class MD5Calc {
+ public:
+	MD5Calc();
+	~MD5Calc(){};
+	bool Update(const char* data, int len);
+	const char* Get();
+ private:
+	MD5_CTX c;  
+	unsigned char md5[17];
+	string result;
+};
+
 #endif  // _UTILFUNCTIONS_
