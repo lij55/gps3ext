@@ -11,14 +11,16 @@ S3Protocol_t *CreateExtWrapper(const char *url) {
 
 S3Protocol_t::S3Protocol_t(const char *url) {
     this->url = url;
+
+    //this->bucket = "metro.pivotal.io";
+    //this->region = "us-west-2";
+    //this->prefix = "data/";
+    //this->schema = "http";
+	
+	// get following from config
+    this->paranum = 1;
     this->cred.secret = "oCTLHlu3qJ+lpBH/+JcIlnNuDebFObFNFeNvzBF0";
     this->cred.keyid = "AKIAIAFSMJUMQWXB2PUQ";
-    this->bucket = "metro.pivotal.io";
-    this->region = "us-west-2";
-    this->prefix = "data/";
-    this->schema = "http";
-
-    this->paranum = 1;  // get from config
 
     filedownloader = NULL;
     fileuploader = NULL;
@@ -32,6 +34,45 @@ S3Protocol_t::~S3Protocol_t() {
     if (filedownloader) delete filedownloader;
     if (fileuploader) delete filedownloader;
     if (keylist) delete keylist;
+}
+
+S3Protocol_t::ValidateURL() {
+	const char* awsdomain = ".amazonaws.com";
+	int ibegin = 0;
+	int iend = url.find("://");
+	if(iend == string::npos) { // -1
+		// error
+		return false;
+	}
+
+	this->schema = url.substr(ibegin, iend);
+
+	ibegin = url.find("-");
+	iend = url.find(awsdomain);
+	if( (iend == string::npos) || (ibegin == string::npos) ) {
+		return false;
+	}
+	this->region = url.substr(ibegin+1, iend - ibegin - 1);
+
+	ibegin = find_Nth(url, 3, "/");
+	iend = find_Nth(url, 4, "/");
+	if( (iend == string::npos) || (ibegin == string::npos) ) {
+		return false;
+	}
+	this->bucket = url.substr(ibegin+1, iend - ibegin - 1);
+
+	this->prefix = url.substr(iend + 1, url.length() - iend - 1);
+
+	if(url.back() != '/') {
+		return false;
+	}
+	
+	std::cout<<schema<<std::endl;
+	std::cout<<region<<std::endl;
+	std::cout<<bucket<<std::endl;
+	std::cout<<prefix<<std::endl;
+	return true;
+
 }
 
 string S3Protocol_t::getKeyURL(const string &key) {
@@ -75,6 +116,9 @@ void S3Protocol_t::getNextDownloader() {
 
 bool S3Protocol_t::Init(int segid, int segnum, enum s3protocol_purpose get_or_write) {
     // Validate url first
+	if(!this->ValidateURL()) {
+		return false;
+	}
 
     // set segment id and num
     this->segid = segid;    // fake

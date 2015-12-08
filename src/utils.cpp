@@ -22,6 +22,9 @@
 
 #include <curl/curl.h>
 
+#include <string>
+using std::string;
+
 bool gethttpnow(char datebuf[65]) {  //('D, d M Y H:i:s T')
     struct tm *tm_info;
     time_t t;
@@ -186,6 +189,30 @@ CURL *CreateCurlHandler(const char *path) {
     }
     return curl;
 }
+
+size_t find_Nth(
+				const string & str ,   // where to work
+				unsigned            N ,     // N'th ocurrence
+				const string & find    // what to 'find'
+				) {
+    if ( 0==N ) { return string::npos; }
+    size_t pos,from=0;
+    unsigned i=0;
+    while ( i<N ) {
+        pos=str.find(find,from);
+        if ( string::npos == pos ) { break; }
+        from = pos + 1; // from = pos + find.size();
+        ++i;
+    }
+    return pos;
+	/**
+    It would be more efficient to use a variation of KMP to
+    benefit from the failure function.
+    - Algorithm inspired by James Kanze.
+    - http://stackoverflow.com/questions/20406744/
+	*/
+}
+
 
 static int logsock = -1;
 static struct sockaddr_in si_logserver;

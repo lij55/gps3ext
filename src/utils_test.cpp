@@ -32,3 +32,8 @@ TEST(curl, init) {
     EXPECT_NE(c, (void *)NULL);
     curl_easy_cleanup(c);
 }
+
+
+TEST(nth, simple) {
+	EXPECT_TRUE(0);
+}
