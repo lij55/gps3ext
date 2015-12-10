@@ -95,3 +95,25 @@ TEST(Downloader, equal) {
         258998272, "762eb3dfc22f85faf659001ebf270b4f", 8, 4 * 1024 * 1024,
         4 * 1024 * 1024);
 }
+
+TEST(Downloader, prime_num) {
+    DownloaderTest(
+        "http://localhost/metro.pivotal.io/debian-8.2.0-amd64-netinst.iso",
+        258998272, "762eb3dfc22f85faf659001ebf270b4f", 7, 4 * 1024 * 1024 - 1,
+        4 * 1024 - 3);
+}
+
+TEST(Downloader, over_flow) {
+    DownloaderTest(
+        "http://localhost/metro.pivotal.io/debian-8.2.0-amd64-netinst.iso",
+        258998272, "762eb3dfc22f85faf659001ebf270b4f", 8, 4 * 1024,
+        512 * 1024 * 1024);
+}
+
+/*
+ *TEST(Downloader, one_byte) {
+ *    DownloaderTest(
+ *        "http://localhost/metro.pivotal.io/debian-8.2.0-amd64-netinst.iso",
+ *        258998272, "762eb3dfc22f85faf659001ebf270b4f", 7, 4 * 1024 * 1024, 1);
+ *}
+ */
