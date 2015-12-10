@@ -441,12 +441,12 @@ bool BucketContentComp(BucketContent *a, BucketContent *b) {
     return strcmp(a->Key(), b->Key()) > 0;
 }
 
-static bool extractContent(ListBucketResult* result, xmlNode* root_element) {
-	if(!result || !root_element) {
-		return false;
-	}
+static bool extractContent(ListBucketResult *result, xmlNode *root_element) {
+    if (!result || !root_element) {
+        return false;
+    }
 
-	xmlNodePtr cur;
+    xmlNodePtr cur;
     cur = root_element->xmlChildrenNode;
     while (cur != NULL) {
         if (!xmlStrcmp(cur->name, (const xmlChar *)"Name")) {
@@ -481,7 +481,7 @@ static bool extractContent(ListBucketResult* result, xmlNode* root_element) {
         cur = cur->next;
     }
     sort(result->contents.begin(), result->contents.end(), BucketContentComp);
-	return true;
+    return true;
 }
 
 ListBucketResult *ListBucket(const char *host, const char *bucket,
@@ -498,43 +498,41 @@ ListBucketResult *ListBucket(const char *host, const char *bucket,
         DoGetXML(host, bucket, sstr.str().c_str(), cred);
     xmlNode *root_element = xmlDocGetRootElement(xmlcontext->myDoc);
     ListBucketResult *result = new ListBucketResult();
-	
-	if(!result) {
-		// allocate fail
-		xmlFreeParserCtxt(xmlcontext);
-		return NULL;
-	}
-	if(!extractContent(result, root_element)) {
-		delete result;
-		xmlFreeParserCtxt(xmlcontext);
-		return NULL;
-	}
-    
+
+    if (!result) {
+        // allocate fail
+        xmlFreeParserCtxt(xmlcontext);
+        return NULL;
+    }
+    if (!extractContent(result, root_element)) {
+        delete result;
+        xmlFreeParserCtxt(xmlcontext);
+        return NULL;
+    }
+
     /* always cleanup */
     xmlFreeParserCtxt(xmlcontext);
     return result;
 }
 
-ListBucketResult* ListBucket_FakeHTTP(const char* host, const char* bucket) {
-
+ListBucketResult *ListBucket_FakeHTTP(const char *host, const char *bucket) {
     std::stringstream sstr;
-	sstr << "http://" << host << "/" << bucket;
-	//sstr << host << "/" << bucket;
+    sstr << "http://" << host << "/" << bucket;
+    // sstr << host << "/" << bucket;
 
-	CURL *curl = curl_easy_init();
+    CURL *curl = curl_easy_init();
 
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, sstr.str().c_str());
-        //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-        //curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
+        // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+        // curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
     } else {
         return NULL;
     }
 
-
     XMLInfo xml;
     xml.ctxt = NULL;
-	
+
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&xml);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ParserCallback);
 
@@ -544,23 +542,23 @@ ListBucketResult* ListBucket_FakeHTTP(const char* host, const char* bucket) {
     if (res != CURLE_OK) {
         fprintf(stderr, "curl_easy_perform() failed: %s\n",
                 curl_easy_strerror(res));
-		return NULL;
-	}
+        return NULL;
+    }
     xmlParseChunk(xml.ctxt, "", 0, 1);
 
     xmlNode *root_element = xmlDocGetRootElement(xml.ctxt->myDoc);
     ListBucketResult *result = new ListBucketResult();
-	if(!result) {
-		// allocate fail
-		xmlFreeParserCtxt(xml.ctxt);
-		return NULL;
-	}
-	if(!extractContent(result, root_element)) {
-		delete result;
-		xmlFreeParserCtxt(xml.ctxt);
-		return NULL;
-	}
-    
+    if (!result) {
+        // allocate fail
+        xmlFreeParserCtxt(xml.ctxt);
+        return NULL;
+    }
+    if (!extractContent(result, root_element)) {
+        delete result;
+        xmlFreeParserCtxt(xml.ctxt);
+        return NULL;
+    }
+
     /* always cleanup */
     xmlFreeParserCtxt(xml.ctxt);
     return result;

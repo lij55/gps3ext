@@ -41,21 +41,18 @@ TEST(OffsetMgr, reset) {
 #define HOSTSTR "localhost"
 #define BUCKETSTR "s3"
 TEST(ListBucket, fake) {
-	ListBucketResult* r = ListBucket_FakeHTTP(HOSTSTR, BUCKETSTR);
-	char urlbuf[256];
-	EXPECT_NE(r, (void*)NULL);
-	if(!r)
-		return;
-	vector<BucketContent *>::iterator i;
-	for (i = r->contents.begin(); i != r->contents.end(); i++) {
-		BucketContent *p = *i;
-		sprintf(urlbuf, "http://%s/%s/%s", HOSTSTR, BUCKETSTR,
-				p->Key());
-		printf("%s, %d\n", urlbuf, p->Size());
-		// printdata(urlbuf, p->Size(), &cred);
-	}
-	delete r;
-	
+    ListBucketResult *r = ListBucket_FakeHTTP(HOSTSTR, BUCKETSTR);
+    char urlbuf[256];
+    EXPECT_NE(r, (void *)NULL);
+    if (!r) return;
+    vector<BucketContent *>::iterator i;
+    for (i = r->contents.begin(); i != r->contents.end(); i++) {
+        BucketContent *p = *i;
+        sprintf(urlbuf, "http://%s/%s/%s", HOSTSTR, BUCKETSTR, p->Key());
+        printf("%s, %d\n", urlbuf, p->Size());
+        // printdata(urlbuf, p->Size(), &cred);
+    }
+    delete r;
 }
 
 TEST(Downloader, divisible) {

@@ -170,5 +170,4 @@ ListBucketResult* ListBucket(const char* host, const char* bucket,
 
 ListBucketResult* ListBucket_FakeHTTP(const char* path);
 
-
 #endif

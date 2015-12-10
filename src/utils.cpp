@@ -190,29 +190,31 @@ CURL *CreateCurlHandler(const char *path) {
     return curl;
 }
 
-size_t find_Nth(
-				const string & str ,   // where to work
-				unsigned            N ,     // N'th ocurrence
-				const string & find    // what to 'find'
-				) {
-    if ( 0==N ) { return string::npos; }
-    size_t pos,from=0;
-    unsigned i=0;
-    while ( i<N ) {
-        pos=str.find(find,from);
-        if ( string::npos == pos ) { break; }
-        from = pos + 1; // from = pos + find.size();
+size_t find_Nth(const string &str,  // where to work
+                unsigned N,         // N'th ocurrence
+                const string &find  // what to 'find'
+                ) {
+    if (0 == N) {
+        return string::npos;
+    }
+    size_t pos, from = 0;
+    unsigned i = 0;
+    while (i < N) {
+        pos = str.find(find, from);
+        if (string::npos == pos) {
+            break;
+        }
+        from = pos + 1;  // from = pos + find.size();
         ++i;
     }
     return pos;
-	/**
-    It would be more efficient to use a variation of KMP to
-    benefit from the failure function.
-    - Algorithm inspired by James Kanze.
-    - http://stackoverflow.com/questions/20406744/
-	*/
+    /**
+It would be more efficient to use a variation of KMP to
+benefit from the failure function.
+- Algorithm inspired by James Kanze.
+- http://stackoverflow.com/questions/20406744/
+    */
 }
-
 
 static int logsock = -1;
 static struct sockaddr_in si_logserver;
@@ -229,7 +231,6 @@ void InitLog() {
     }
 }
 
-
 void EXTLOG(const char *fmt, ...) {
     char buf[1024];
     va_list args;
@@ -241,27 +242,26 @@ void EXTLOG(const char *fmt, ...) {
            sizeof(sockaddr_in));
 }
 
-
 MD5Calc::MD5Calc() {
-	memset(this->md5, 0, 17);
-	MD5_Init(&this->c);
+    memset(this->md5, 0, 17);
+    MD5_Init(&this->c);
 }
 
-bool MD5Calc::Update(const char* data, int len) {
-	MD5_Update(&this->c, data, len);  
-	return true;
+bool MD5Calc::Update(const char *data, int len) {
+    MD5_Update(&this->c, data, len);
+    return true;
 }
 
+const char *MD5Calc::Get() {
+    MD5_Final(this->md5, &c);
+    std::stringstream ss;
+    for (int i = 0; i < 16; i++)
+        ss << std::hex << std::setw(2) << std::setfill('0')
+           << (int)this->md5[i];
+    this->result = ss.str();
 
-const char* MD5Calc::Get() {
-	MD5_Final(this->md5,&c);
-	std::stringstream ss;
-	for(int i = 0; i < 16; i++)  
-		ss << std::hex << std::setw(2) << std::setfill('0') << (int)this->md5[i];  
-	this->result = ss.str();
-
-	// Reset MD5 context
-	memset(this->md5, 0, 17);
-	MD5_Init(&this->c);
-	return this->result.c_str();
+    // Reset MD5 context
+    memset(this->md5, 0, 17);
+    MD5_Init(&this->c);
+    return this->result.c_str();
 }
