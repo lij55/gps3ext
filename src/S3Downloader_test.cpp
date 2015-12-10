@@ -55,56 +55,43 @@ TEST(ListBucket, fake) {
     delete r;
 }
 
-TEST(Downloader, divisible) {
+void DownloaderTest(const char *url, uint64_t file_size, const char *md5_str,
+                    uint8_t thread_num, uint64_t chunk_size,
+                    uint64_t buffer_size) {
     InitLog();
-    uint64_t len = 4 * 1024;
-    char *buf = (char *)malloc(4 * 1024);
-    Downloader *d = new Downloader(8);
+    uint64_t buf_len = buffer_size;
+    char *buf = (char *)malloc(buffer_size);
+    Downloader *d = new Downloader(thread_num);
     MD5Calc m;
 
     ASSERT_NE((void *)NULL, buf);
 
-    ASSERT_TRUE(d->init(
-        "http://localhost/metro.pivotal.io/debian-8.2.0-amd64-netinst.iso",
-        258998272, 4 * 1024 * 1024, NULL));
+    ASSERT_TRUE(d->init(url, file_size, chunk_size, NULL));
 
     while (1) {
-        ASSERT_TRUE(d->get(buf, len));
-        if (len == 0) {
+        ASSERT_TRUE(d->get(buf, buf_len));
+        if (buf_len == 0) {
             break;
         }
-        m.Update(buf, len);
-        len = 4 * 1024;
+        m.Update(buf, buf_len);
+        buf_len = buffer_size;
     }
 
-    EXPECT_STREQ("762eb3dfc22f85faf659001ebf270b4f", m.Get());
+    EXPECT_STREQ(md5_str, m.Get());
     delete d;
     free(buf);
 }
 
-TEST(Downloader, equal) {
-    InitLog();
-    uint64_t len = 4 * 1024 * 1024;
-    char *buf = (char *)malloc(4 * 1024 * 1024);
-    Downloader *d = new Downloader(8);
-    MD5Calc m;
-
-    ASSERT_NE((void *)NULL, buf);
-
-    ASSERT_TRUE(d->init(
+TEST(Downloader, divisible) {
+    DownloaderTest(
         "http://localhost/metro.pivotal.io/debian-8.2.0-amd64-netinst.iso",
-        258998272, 4 * 1024 * 1024, NULL));
+        258998272, "762eb3dfc22f85faf659001ebf270b4f", 8, 4 * 1024 * 1024,
+        4 * 1024);
+}
 
-    while (1) {
-        ASSERT_TRUE(d->get(buf, len));
-        if (len == 0) {
-            break;
-        }
-        m.Update(buf, len);
-        len = 4 * 1024 * 1024;
-    }
-
-    EXPECT_STREQ("762eb3dfc22f85faf659001ebf270b4f", m.Get());
-    delete d;
-    free(buf);
+TEST(Downloader, equal) {
+    DownloaderTest(
+        "http://localhost/metro.pivotal.io/debian-8.2.0-amd64-netinst.iso",
+        258998272, "762eb3dfc22f85faf659001ebf270b4f", 8, 4 * 1024 * 1024,
+        4 * 1024 * 1024);
 }
