@@ -57,3 +57,57 @@ TEST(ListBucket, fake) {
 	delete r;
 	
 }
+
+TEST(Downloader, divisible) {
+    InitLog();
+    uint64_t len = 4 * 1024;
+    char *buf = (char *)malloc(4 * 1024);
+    Downloader *d = new Downloader(8);
+    MD5Calc m;
+
+    ASSERT_NE((void *)NULL, buf);
+
+    EXPECT_TRUE(d->init(
+        "http://localhost/metro.pivotal.io/debian-8.2.0-amd64-netinst.iso",
+        258998272, 4 * 1024 * 1024, NULL));
+
+    while (1) {
+        EXPECT_TRUE(d->get(buf, len));
+        if (len == 0) {
+            break;
+        }
+        m.Update(buf, len);
+        len = 4 * 1024;
+    }
+
+    EXPECT_STREQ("762eb3dfc22f85faf659001ebf270b4f", m.Get());
+    delete d;
+    free(buf);
+}
+
+TEST(Downloader, equal) {
+    InitLog();
+    uint64_t len = 4 * 1024 * 1024;
+    char *buf = (char *)malloc(4 * 1024 * 1024);
+    Downloader *d = new Downloader(8);
+    MD5Calc m;
+
+    ASSERT_NE((void *)NULL, buf);
+
+    EXPECT_TRUE(d->init(
+        "http://localhost/metro.pivotal.io/debian-8.2.0-amd64-netinst.iso",
+        258998272, 4 * 1024 * 1024, NULL));
+
+    while (1) {
+        EXPECT_TRUE(d->get(buf, len));
+        if (len == 0) {
+            break;
+        }
+        m.Update(buf, len);
+        len = 4 * 1024 * 1024;
+    }
+
+    EXPECT_STREQ("762eb3dfc22f85faf659001ebf270b4f", m.Get());
+    delete d;
+    free(buf);
+}
