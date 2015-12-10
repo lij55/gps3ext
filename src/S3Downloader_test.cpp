@@ -64,12 +64,12 @@ TEST(Downloader, divisible) {
 
     ASSERT_NE((void *)NULL, buf);
 
-    EXPECT_TRUE(d->init(
+    ASSERT_TRUE(d->init(
         "http://localhost/metro.pivotal.io/debian-8.2.0-amd64-netinst.iso",
         258998272, 4 * 1024 * 1024, NULL));
 
     while (1) {
-        EXPECT_TRUE(d->get(buf, len));
+        ASSERT_TRUE(d->get(buf, len));
         if (len == 0) {
             break;
         }
@@ -91,12 +91,12 @@ TEST(Downloader, equal) {
 
     ASSERT_NE((void *)NULL, buf);
 
-    EXPECT_TRUE(d->init(
+    ASSERT_TRUE(d->init(
         "http://localhost/metro.pivotal.io/debian-8.2.0-amd64-netinst.iso",
         258998272, 4 * 1024 * 1024, NULL));
 
     while (1) {
-        EXPECT_TRUE(d->get(buf, len));
+        ASSERT_TRUE(d->get(buf, len));
         if (len == 0) {
             break;
         }
