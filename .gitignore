@@ -43,3 +43,6 @@ GTAGS
 GRTAGS
 core
 
+*.gcov
+*.gcda
+*.gcno
