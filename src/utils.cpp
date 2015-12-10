@@ -28,6 +28,8 @@
 #include <sstream>
 using std::string;
 
+#include <iomanip>
+
 bool gethttpnow(char datebuf[65]) {  //('D, d M Y H:i:s T')
     struct tm *tm_info;
     time_t t;
