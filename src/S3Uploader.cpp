@@ -21,11 +21,8 @@ Uploader::Uploader() {
     // PutS3Object(host, bucket, url, cred, data);
 }
 
-Uploader::~Uploader() {
-}
+Uploader::~Uploader() {}
 
-void Uploader::destroy() {
-}
+void Uploader::destroy() {}
 
-bool Uploader::write(char *data, uint64_t &len) {
-}
+bool Uploader::write(char *data, uint64_t &len) {}

@@ -33,18 +33,15 @@ TEST(utils, simplecurl) {
     curl_easy_cleanup(c);
 }
 
-
-TEST(utils, nth) {
-	EXPECT_TRUE(0);
-}
+TEST(utils, nth) { EXPECT_TRUE(0); }
 
 #define MD5TESTBUF "abcdefghijklmnopqrstuvwxyz\n"
 TEST(utils, md5) {
-	MD5Calc m;
-	m.Update(MD5TESTBUF, strlen(MD5TESTBUF));
-	EXPECT_STREQ("e302f9ecd2d189fa80aac1c3392e9b9c",m.Get());
-	m.Update(MD5TESTBUF, strlen(MD5TESTBUF));
-	m.Update(MD5TESTBUF, strlen(MD5TESTBUF));
-	m.Update(MD5TESTBUF, strlen(MD5TESTBUF));
-	EXPECT_STREQ("3f8c2c6e2579e864071c33919fac61ee",m.Get());
+    MD5Calc m;
+    m.Update(MD5TESTBUF, strlen(MD5TESTBUF));
+    EXPECT_STREQ("e302f9ecd2d189fa80aac1c3392e9b9c", m.Get());
+    m.Update(MD5TESTBUF, strlen(MD5TESTBUF));
+    m.Update(MD5TESTBUF, strlen(MD5TESTBUF));
+    m.Update(MD5TESTBUF, strlen(MD5TESTBUF));
+    EXPECT_STREQ("3f8c2c6e2579e864071c33919fac61ee", m.Get());
 }

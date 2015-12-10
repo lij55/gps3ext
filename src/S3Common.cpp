@@ -42,8 +42,8 @@ bool SignPUTv2(HeaderContent *h, const char *path, const S3Credential &cred) {
     gethttpnow(timestr);
     h->Add(DATE, timestr);
     stringstream sstr;
-	
-	typestr = h->Get(CONTENTTYPE);
+
+    typestr = h->Get(CONTENTTYPE);
 
     sstr << "PUT\n\n" << typestr << "\n" << timestr << "\n" << path;
     char *tmpbuf = sha1hmac(sstr.str().c_str(), cred.secret.c_str());
@@ -66,8 +66,8 @@ bool SignPOSTv2(HeaderContent *h, const char *path, const S3Credential &cred) {
     gethttpnow(timestr);
     h->Add(DATE, timestr);
     stringstream sstr;
-	md5str = h->Get(CONTENTMD5);
-	typestr = h->Get(CONTENTTYPE);
+    md5str = h->Get(CONTENTMD5);
+    typestr = h->Get(CONTENTTYPE);
 
     sstr << "POST\n" << md5str << "\n" << typestr << "\n" << timestr << "\n"
          << path;
@@ -151,12 +151,12 @@ bool HeaderContent::Add(HeaderField f, const std::string &v) {
     }
 }
 
-const char* HeaderContent::Get(HeaderField f) {
-	const char* ret = NULL;
+const char *HeaderContent::Get(HeaderField f) {
+    const char *ret = NULL;
     if (!this->fields[f].empty()) {
-		ret = this->fields[f].c_str();
-    } 
-	return ret;
+        ret = this->fields[f].c_str();
+    }
+    return ret;
 }
 
 struct curl_slist *HeaderContent::GetList() {

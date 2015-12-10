@@ -15,7 +15,8 @@ enum s3protocol_purpose {
 struct S3Protocol_t {
     S3Protocol_t(const char* url);
     virtual ~S3Protocol_t();
-    virtual bool Init(int segid, int segnum, enum s3protocol_purpose get_or_write);
+    virtual bool Init(int segid, int segnum,
+                      enum s3protocol_purpose get_or_write);
     virtual bool Get(char* data, size_t& len);
     virtual bool Write(char* data, size_t& len);
     virtual bool Destroy();
@@ -38,7 +39,7 @@ struct S3Protocol_t {
 
     string getKeyURL(const string& key);
     void getNextDownloader();
-	bool ValidateURL();
+    bool ValidateURL();
 };
 
 extern "C" S3Protocol_t* CreateExtWrapper(const char* url);
