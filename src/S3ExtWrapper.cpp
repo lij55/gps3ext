@@ -36,7 +36,7 @@ S3Protocol_t::~S3Protocol_t() {
     if (keylist) delete keylist;
 }
 
-S3Protocol_t::ValidateURL() {
+bool S3Protocol_t::ValidateURL() {
     const char *awsdomain = ".amazonaws.com";
     int ibegin = 0;
     int iend = url.find("://");
