@@ -210,6 +210,8 @@ bool Downloader::init(const char *url, uint64_t size, uint64_t chunksize,
 
 bool Downloader::get(char *data, uint64_t &len) {
     uint64_t filelen = this->o->Size();
+
+RETRY:
     if (this->readlen == filelen) {
         len = 0;
         return true;
@@ -220,12 +222,20 @@ bool Downloader::get(char *data, uint64_t &len) {
     this->readlen += tmplen;
     if (tmplen < len) {
         this->chunkcount++;
-        len = tmplen;
         if (buf->Error()) {
             EXTLOG("buffer error");
             return false;
         }
     }
+
+    // retry to confirm whether thread reading is finished or chunk size is
+    // divisible by get()'s buffer size
+    if (tmplen == 0) {
+        goto RETRY;
+    }
+    len = tmplen;
+
+    EXTLOG("in downloader %lld, %lld, %lld\n", filelen, this->readlen, len);
     return true;
 }
 
