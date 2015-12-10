@@ -49,7 +49,7 @@ test: buildtest
 	@./$(testapp) || echo "done"
 
 coverage: test
-	gcov -r $(testcources) | grep -A 3 "src"
+	@gcov -r $(testcources) | grep -v test.cpp | grep -A 2 "src/.*.cpp"
 
 clean:
 	rm -f $(app) $(testapp) src/*.o src/*.a src/lib/*.o
