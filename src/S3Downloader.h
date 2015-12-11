@@ -95,7 +95,7 @@ struct Downloader {
     pthread_t* threads;
     BlockingBuffer** buffers;
     OffsetMgr* o;
-    uint8_t chunkcount;
+    uint64_t chunkcount;
     uint64_t readlen;
 };
 
