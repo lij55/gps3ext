@@ -1,12 +1,12 @@
 GTEST_DIR = gtest
 
 CPP = g++
-CFLAGS = -g3 -std=c++0x -fPIC -fprofile-arcs -ftest-coverage
-INCLUDES = -Isrc -Isrc/lib -I/usr/include/libxml2
+CFLAGS = -g3 -std=c++11 -fPIC -fprofile-arcs -ftest-coverage
+INCLUDES = -Isrc -Ilib -I/usr/include/libxml2
 LDFLAGS = -lpthread -lcrypto -lcurl -lxml2 -lgcov
 
-sources = src/S3Downloader.cpp src/utils.cpp src/lib/http_parser.cpp src/standalone.cpp src/S3Common.cpp src/S3Uploader.cpp src/S3Operations.cpp
-testcources = src/utils_test.cpp src/S3Downloader_test.cpp src/lib/http_parser.cpp src/S3Common_test.cpp
+sources = src/S3Downloader.cpp src/utils.cpp lib/http_parser.cpp src/standalone.cpp src/S3Common.cpp src/S3Uploader.cpp src/S3Operations.cpp
+testcources = src/utils_test.cpp src/S3Downloader_test.cpp lib/http_parser.cpp src/S3Common_test.cpp
 
 objects = $(sources:.cpp=.o)
 testobjs = $(testcources:.cpp=.o)
@@ -53,12 +53,13 @@ coverage: test
 
 clean:
 	rm -f $(app) $(testapp) src/*.o src/*.a src/lib/*.o
+	rm -f *.gcov src/*.gcov src/*.gcda src/*.gcno
 
 tags:
-	@etags *.cpp *.h
+	etags src/*.cpp src/*.h
 
 lint:
-	cppcheck -v --enable=warning *.cpp *.h
+	cppcheck -v --enable=warning src/*.cpp src/*.h
 
 style:
 	astyle -s4 src/*.cpp src/*.h
