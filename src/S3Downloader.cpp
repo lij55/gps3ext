@@ -270,7 +270,7 @@ static uint64_t WriterCallback(void *contents, uint64_t size, uint64_t nmemb,
 HTTPFetcher::HTTPFetcher(const char *url, OffsetMgr *o)
     : BlockingBuffer(url, o), urlparser(url) {
     this->curl = curl_easy_init();
-    curl_easy_setopt(this->curl, CURLOPT_VERBOSE, 1L);
+    // curl_easy_setopt(this->curl, CURLOPT_VERBOSE, 1L);
     // curl_easy_setopt(curl, CURLOPT_PROXY, "127.0.0.1:8080");
     curl_easy_setopt(this->curl, CURLOPT_WRITEFUNCTION, WriterCallback);
     curl_easy_setopt(this->curl, CURLOPT_FORBID_REUSE, 1L);
@@ -402,7 +402,7 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
 
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, url);
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+        // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
     } else {
         return NULL;

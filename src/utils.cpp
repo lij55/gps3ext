@@ -187,7 +187,7 @@ CURL *CreateCurlHandler(const char *path) {
 
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, path);
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+        // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
     }
     return curl;
 }

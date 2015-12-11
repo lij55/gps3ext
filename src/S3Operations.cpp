@@ -48,7 +48,7 @@ bool PutS3Object(const char *host, const char *bucket, const char *url,
            to curl_off_t since we must be sure to use the correct data size */
         curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)data_size);
 
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+        // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
     } else {
         return false;
@@ -87,7 +87,7 @@ bool DeleteS3Object(const char *host, const char *bucket, const char *url,
 
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, url);
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+        // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
     } else {
         return false;

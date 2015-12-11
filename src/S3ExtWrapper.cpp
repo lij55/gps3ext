@@ -32,7 +32,7 @@ S3Protocol_t::S3Protocol_t(const char *url) {
 
 S3Protocol_t::~S3Protocol_t() {
     if (filedownloader) delete filedownloader;
-    if (fileuploader) delete filedownloader;
+    if (fileuploader) delete fileuploader;
     if (keylist) delete keylist;
 }
 
