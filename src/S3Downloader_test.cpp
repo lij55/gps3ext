@@ -83,37 +83,59 @@ void DownloaderTest(const char *url, uint64_t file_size, const char *md5_str,
 }
 
 TEST(Downloader, divisible) {
-    DownloaderTest(
-        "http://localhost/metro.pivotal.io/debian-8.2.0-amd64-netinst.iso",
-        258998272, "762eb3dfc22f85faf659001ebf270b4f", 8, 4 * 1024 * 1024,
-        4 * 1024);
+    DownloaderTest("http://localhost/metro.pivotal.io/8M", 8388608,
+                   "22129b81bf8f96a06a8b7f3d2a683588", 4, 4 * 1024, 16 * 1024);
 }
 
 TEST(Downloader, equal) {
-    DownloaderTest(
-        "http://localhost/metro.pivotal.io/debian-8.2.0-amd64-netinst.iso",
-        258998272, "762eb3dfc22f85faf659001ebf270b4f", 8, 4 * 1024 * 1024,
-        4 * 1024 * 1024);
+    DownloaderTest("http://localhost/metro.pivotal.io/8M", 8388608,
+                   "22129b81bf8f96a06a8b7f3d2a683588", 4, 16 * 1024, 16 * 1024);
 }
 
-TEST(Downloader, prime_num) {
-    DownloaderTest(
-        "http://localhost/metro.pivotal.io/debian-8.2.0-amd64-netinst.iso",
-        258998272, "762eb3dfc22f85faf659001ebf270b4f", 7, 4 * 1024 * 1024 - 1,
-        4 * 1024 - 3);
+TEST(Downloader, one_byte) {
+    DownloaderTest("http://localhost/metro.pivotal.io/8M", 8388608,
+                   "22129b81bf8f96a06a8b7f3d2a683588", 4, 4 * 1024, 1);
 }
 
 TEST(Downloader, over_flow) {
-    DownloaderTest(
-        "http://localhost/metro.pivotal.io/debian-8.2.0-amd64-netinst.iso",
-        258998272, "762eb3dfc22f85faf659001ebf270b4f", 8, 4 * 1024,
-        512 * 1024 * 1024);
+    DownloaderTest("http://localhost/metro.pivotal.io/8M", 8388608,
+                   "22129b81bf8f96a06a8b7f3d2a683588", 4, 7 * 1024, 15 * 1024);
 }
 
-/*
- *TEST(Downloader, one_byte) {
- *    DownloaderTest(
- *        "http://localhost/metro.pivotal.io/debian-8.2.0-amd64-netinst.iso",
- *        258998272, "762eb3dfc22f85faf659001ebf270b4f", 7, 4 * 1024 * 1024, 1);
- *}
- */
+TEST(Downloader, multi_thread) {
+    DownloaderTest("http://localhost/metro.pivotal.io/1M", 1048576,
+                   "06427456b575a3880936b4ae43448082", 64, 4 * 1024,
+                   511 * 1023);
+}
+
+TEST(Downloader, single_thread) {
+    DownloaderTest("http://localhost/metro.pivotal.io/1M", 1048576,
+                   "06427456b575a3880936b4ae43448082", 1, 4 * 1024, 511 * 1023);
+}
+
+TEST(Downloader, random_parameters_1M) {
+    DownloaderTest("http://localhost/metro.pivotal.io/1M", 1048576,
+                   "06427456b575a3880936b4ae43448082", 3, 3 * 29, 571 * 1023);
+}
+
+TEST(Downloader, random_parameters_1G) {
+    DownloaderTest("http://localhost/metro.pivotal.io/1G", 1073741824,
+                   "a2cb2399eb8bc97084aed673e5d09f4d", 9, 42 * 1024,
+                   513 * 1025 * 37);
+}
+
+TEST(Downloader, random_parameters_8M) {
+    DownloaderTest("http://localhost/metro.pivotal.io/8M", 8388608,
+                   "22129b81bf8f96a06a8b7f3d2a683588", 77, 7 * 1024,
+                   777 * 1025);
+}
+
+TEST(Downloader, random_parameters_64M) {
+    DownloaderTest("http://localhost/metro.pivotal.io/64M", 67108864,
+                   "0871a7464a7ff85564f4f95b9ac77321", 51, 7 * 1053, 77 * 87);
+}
+
+TEST(Downloader, random_parameters_256M) {
+    DownloaderTest("http://localhost/metro.pivotal.io/256M", 268435456,
+                   "9cb7c287fdd5a44378798d3e75d2d2a6", 3, 1 * 10523, 77 * 879);
+}
