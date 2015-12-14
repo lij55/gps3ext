@@ -28,12 +28,16 @@ S3ExtBase::S3ExtBase(const char* url) {
 }
 
 S3ExtBase::~S3ExtBase() {
-	
+}
+
+S3Reader::~S3Reader() {
 }	
 
 S3Reader::S3Reader(const char* url)
 	:S3ExtBase(url) {
 	this->contentindex = -1;
+        this->filedownloader = NULL;
+        this->keylist = NULL;
 }
 
 bool S3Reader::Init(int segid, int segnum,
@@ -44,7 +48,7 @@ bool S3Reader::Init(int segid, int segnum,
     this->segnum = segnum;  // fake
     this->contentindex = this->segid;
 
-	this->chunksize = chunksize;
+    this->chunksize = chunksize;
 
 	// TODO: As separated function for generating url
     stringstream sstr;
@@ -64,7 +68,8 @@ bool S3Reader::Init(int segid, int segnum,
 }
 
 void S3Reader::getNextDownloader() {
-	EXTLOG("download next file\n");
+    EXTLOG("download next file, contentindex = %d\n", this->contentindex);
+
     if (this->filedownloader) {  // reset old downloader
         filedownloader->destroy();
         delete this->filedownloader;
