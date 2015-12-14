@@ -7,41 +7,54 @@
 
 using std::string;
 
-enum s3protocol_purpose {
-    TO_GET,
-    TO_WRITE,
-};
-
-struct S3Protocol_t {
-    S3Protocol_t(const char* url);
-    virtual ~S3Protocol_t();
-    virtual bool Init(int segid, int segnum,
-                      enum s3protocol_purpose get_or_write);
-    virtual bool Get(char* data, size_t& len);
-    virtual bool Write(char* data, size_t& len);
-    virtual bool Destroy();
-
-   private:
+class S3ExtBase {
+ public:
+	S3ExtBase(const char* url);
+	virtual ~S3ExtBase();
+	virtual bool Init(int segid, int segnum,
+                      int chunksize) = 0;
+	virtual bool TransferData(char* data, size_t& len) = 0;
+	virtual bool Destroy() = 0;
+ protected:
     S3Credential cred;
+	
+    string url;
     string schema;
     string bucket;
     string prefix;
     string region;
 
     int segid;
-    int contentindex;
     int segnum;
-    int paranum;
-    string url;
-    Downloader* filedownloader;
-    Uploader* fileuploader;
-    ListBucketResult* keylist;
 
-    string getKeyURL(const string& key);
-    void getNextDownloader();
-    bool ValidateURL();
+	int concurrent_num;
+	int chunksize;
+
+	virtual bool ValidateURL();
 };
 
-extern "C" S3Protocol_t* CreateExtWrapper(const char* url);
+class S3Reader : public S3ExtBase {
+ public:
+	S3Reader(const char* url);
+	virtual ~S3Reader();
+	virtual bool Init(int segid, int segnum,
+                      int chunksize);
+	virtual bool TransferData(char* data, size_t& len);
+	virtual bool Destroy();
+ protected:
+	virtual string getKeyURL(const string& key);
+ private:
+	int contentindex;
+    Downloader* filedownloader;
+    ListBucketResult* keylist;
+    
+    void getNextDownloader();
+};
+
+class S3Writer : public S3ExtBase {
+};
+
+
+extern "C" S3ExtBase* CreateExtWrapper(const char* url);
 
 #endif

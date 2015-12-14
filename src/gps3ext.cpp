@@ -29,7 +29,7 @@ Datum s3_validate_urls(PG_FUNCTION_ARGS);
  * Import data into GPDB.
  */
 Datum s3_import(PG_FUNCTION_ARGS) {
-    S3Protocol_t *myData;
+    S3ExtBase *myData;
     char *data;
     int data_len;
     size_t nread = 0;
@@ -40,8 +40,8 @@ Datum s3_import(PG_FUNCTION_ARGS) {
              "extprotocol_import: not called by external protocol manager");
 
     /* Get our internal description of the protocol */
-    myData = (S3Protocol_t *)EXTPROTOCOL_GET_USER_CTX(fcinfo);
-    EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
+    myData = (S3ExtBase *)EXTPROTOCOL_GET_USER_CTX(fcinfo);
+    // EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
     if (EXTPROTOCOL_IS_LAST_CALL(fcinfo)) {
         if (!myData->Destroy()) {
             ereport(ERROR, (0, errmsg("Cleanup S3 extention failed")));
@@ -53,7 +53,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
     if (myData == NULL) {
         /* first call. do any desired init */
         InitLog();
-        const char *p_name = "s3ext";
+        const char *p_name = "s3";
         char *url = EXTPROTOCOL_GET_URL(fcinfo);
 
         myData = CreateExtWrapper(
@@ -61,7 +61,8 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
         EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
 
-        if (!myData || !myData->Init(0, 1, TO_GET)) {
+		// TODO: Get real segment number and segment id
+        if (!myData || !myData->Init(0, 1, 64 * 1024 * 1024)) {
             if (myData) delete myData;
             ereport(ERROR, (0, errmsg("Init S3 extension fail")));
         }
@@ -84,10 +85,10 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
     data = EXTPROTOCOL_GET_DATABUF(fcinfo);
     data_len = EXTPROTOCOL_GET_DATALEN(fcinfo);
-    EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
+    // EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
     if (data_len > 0) {
         nread = data_len;
-        if (!myData->Get(data, nread))
+        if (!myData->TransferData(data, nread))
             ereport(ERROR, (0, errmsg("s3_import: could not read data")));
         EXTLOG("read %d data from S3\n", nread);
     }
@@ -99,7 +100,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
  * Export data out of GPDB.
  */
 Datum s3_export(PG_FUNCTION_ARGS) {
-    S3Protocol_t *myData;
+    S3ExtBase *myData;
     char *data;
     int data_len;
     size_t nwrite = 0;
@@ -110,8 +111,8 @@ Datum s3_export(PG_FUNCTION_ARGS) {
              "extprotocol_import: not called by external protocol manager");
 
     /* Get our internal description of the protocol */
-    myData = (S3Protocol_t *)EXTPROTOCOL_GET_USER_CTX(fcinfo);
-    EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
+    myData = (S3ExtBase *)EXTPROTOCOL_GET_USER_CTX(fcinfo);
+    // EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
     if (EXTPROTOCOL_IS_LAST_CALL(fcinfo)) {
         if (!myData->Destroy()) {
             ereport(ERROR, (0, errmsg("Cleanup S3 extention failed")));
@@ -123,15 +124,16 @@ Datum s3_export(PG_FUNCTION_ARGS) {
     if (myData == NULL) {
         /* first call. do any desired init */
         InitLog();
-        const char *p_name = "s3ext";
+        const char *p_name = "s3";
         char *url = EXTPROTOCOL_GET_URL(fcinfo);
 
         myData = CreateExtWrapper(
             "http://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/");
 
-        EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
+		// EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
 
-        if (!myData || !myData->Init(0, 1, TO_WRITE)) {
+		// TODO: Get real segment number and segid
+        if (!myData || !myData->Init(0, 1, 64 * 1024 * 1024)) {
             if (myData) delete myData;
             ereport(ERROR, (0, errmsg("Init S3 extension fail")));
         }
@@ -149,7 +151,7 @@ Datum s3_export(PG_FUNCTION_ARGS) {
     EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
     if (data_len > 0) {
         nwrite = data_len;
-        if (!myData->Write(data, nwrite))
+        if (!myData->TransferData(data, nwrite))
             ereport(ERROR, (0, errmsg("s3_export: could not write data")));
         EXTLOG("write %d data from S3\n", nwrite);
     }

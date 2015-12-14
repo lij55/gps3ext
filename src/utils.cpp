@@ -162,7 +162,7 @@ char *SignatureV2(const char *date, const char *path, const char *key) {
     int maxlen, len;
     char *tmpbuf, *outbuf;
     if (!date || !path || !key) {
-        return false;
+        return NULL;
     }
     maxlen = strlen(date) + strlen(path) + 20;
     tmpbuf = (char *)alloca(maxlen);
