@@ -39,34 +39,52 @@ TEST(OffsetMgr, reset) {
 }
 
 #define HOSTSTR "localhost"
-#define BUCKETSTR "s3"
+#define BUCKETSTR "metro.pivotal.io"
 TEST(ListBucket, fake) {
     ListBucketResult *r = ListBucket_FakeHTTP(HOSTSTR, BUCKETSTR);
-    char urlbuf[256];
     EXPECT_NE(r, (void *)NULL);
     if (!r) return;
+	ASSERT_EQ(r->contents.size(), 16);
+
+    char urlbuf[256];
     vector<BucketContent *>::iterator i;
     for (i = r->contents.begin(); i != r->contents.end(); i++) {
         BucketContent *p = *i;
         sprintf(urlbuf, "http://%s/%s/%s", HOSTSTR, BUCKETSTR, p->Key());
         printf("%s, %d\n", urlbuf, p->Size());
-        // printdata(urlbuf, p->Size(), &cred);
     }
     delete r;
 }
 
-void DownloaderTest(const char *url, uint64_t file_size, const char *md5_str,
+#define S3HOST "s3-us-west-2.amazonaws.com"
+#define S3BUCKET "metro.pivotal.io"
+#define S3PREFIX "data"
+
+#define KEYID "AKIAIAFSMJUMQWXB2PUQ"
+#define SECRET "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"
+
+
+void DownloadTest(const char *url, uint64_t file_size, const char *md5_str,
                     uint8_t thread_num, uint64_t chunk_size,
-                    uint64_t buffer_size) {
+					 uint64_t buffer_size, bool use_credential) {
     InitLog();
+	S3Credential g_cred = {KEYID, SECRET};
+
     uint64_t buf_len = buffer_size;
     char *buf = (char *)malloc(buffer_size);
     Downloader *d = new Downloader(thread_num);
     MD5Calc m;
+	bool result = false;
 
     ASSERT_NE((void *)NULL, buf);
 
-    ASSERT_TRUE(d->init(url, file_size, chunk_size, NULL));
+	if(use_credential) {
+		result = d->init(url, file_size, chunk_size, &g_cred);
+	} else {
+		result = d->init(url, file_size, chunk_size, NULL);
+	}
+	
+	ASSERT_TRUE(result);
 
     while (1) {
         ASSERT_TRUE(d->get(buf, buf_len));
@@ -77,65 +95,121 @@ void DownloaderTest(const char *url, uint64_t file_size, const char *md5_str,
         buf_len = buffer_size;
     }
 
-    EXPECT_STREQ(md5_str, m.Get());
+    ASSERT_STREQ(md5_str, m.Get());
     delete d;
     free(buf);
 }
 
-TEST(Downloader, divisible) {
-    DownloaderTest("http://localhost/metro.pivotal.io/8M", 8388608,
+void HTTPDownloaderTest(const char *url, uint64_t file_size, const char *md5_str,
+                    uint8_t thread_num, uint64_t chunk_size,
+						 uint64_t buffer_size) {
+	return DownloadTest(url, file_size, md5_str, thread_num, chunk_size, buffer_size,
+						  false);
+}
+
+void S3DwonloadTest(const char *url, uint64_t file_size, const char *md5_str,
+                    uint8_t thread_num, uint64_t chunk_size,
+						 uint64_t buffer_size) {
+	return DownloadTest(url, file_size, md5_str, thread_num, chunk_size, buffer_size,
+						true);
+}
+
+TEST(HTTPDownloader, divisible) {
+    HTTPDownloaderTest("http://localhost/testdata/8M", 8388608,
                    "22129b81bf8f96a06a8b7f3d2a683588", 4, 4 * 1024, 16 * 1024);
 }
 
-TEST(Downloader, equal) {
-    DownloaderTest("http://localhost/metro.pivotal.io/8M", 8388608,
+TEST(HTTPDownloader, equal) {
+    HTTPDownloaderTest("http://localhost/testdata/8M", 8388608,
                    "22129b81bf8f96a06a8b7f3d2a683588", 4, 16 * 1024, 16 * 1024);
 }
 
-TEST(Downloader, one_byte) {
-    DownloaderTest("http://localhost/metro.pivotal.io/8M", 8388608,
+TEST(HTTPDownloader, one_byte) {
+    HTTPDownloaderTest("http://localhost/testdata/8M", 8388608,
                    "22129b81bf8f96a06a8b7f3d2a683588", 4, 4 * 1024, 1);
 }
 
-TEST(Downloader, over_flow) {
-    DownloaderTest("http://localhost/metro.pivotal.io/8M", 8388608,
+TEST(HTTPDownloader, over_flow) {
+    HTTPDownloaderTest("http://localhost/testdata/8M", 8388608,
                    "22129b81bf8f96a06a8b7f3d2a683588", 4, 7 * 1024, 15 * 1024);
 }
 
-TEST(Downloader, multi_thread) {
-    DownloaderTest("http://localhost/metro.pivotal.io/1M", 1048576,
+TEST(HTTPDownloader, multi_thread) {
+    HTTPDownloaderTest("http://localhost/testdata/1M", 1048576,
                    "06427456b575a3880936b4ae43448082", 64, 4 * 1024,
                    511 * 1023);
 }
 
-TEST(Downloader, single_thread) {
-    DownloaderTest("http://localhost/metro.pivotal.io/1M", 1048576,
+TEST(HTTPDownloader, single_thread) {
+    HTTPDownloaderTest("http://localhost/testdata/1M", 1048576,
                    "06427456b575a3880936b4ae43448082", 1, 4 * 1024, 511 * 1023);
 }
 
-TEST(Downloader, random_parameters_1M) {
-    DownloaderTest("http://localhost/metro.pivotal.io/1M", 1048576,
+TEST(HTTPDownloader, random_parameters_1M) {
+    HTTPDownloaderTest("http://localhost/testdata/1M", 1048576,
                    "06427456b575a3880936b4ae43448082", 3, 3 * 29, 571 * 1023);
 }
 
-TEST(Downloader, random_parameters_1G) {
-    DownloaderTest("http://localhost/metro.pivotal.io/1G", 1073741824,
+TEST(HTTPDownloader, random_parameters_1G) {
+    HTTPDownloaderTest("http://localhost/testdata/1G", 1073741824,
                    "a2cb2399eb8bc97084aed673e5d09f4d", 9, 42 * 1024,
                    513 * 1025 * 37);
 }
 
-TEST(Downloader, random_parameters_8M) {
-    DownloaderTest("http://localhost/metro.pivotal.io/8M", 8388608,
+TEST(HTTPDownloader, random_parameters_8M) {
+    HTTPDownloaderTest("http://localhost/testdata/8M", 8388608,
                    "22129b81bf8f96a06a8b7f3d2a683588", 77, 7 * 1024,
                    777 * 1025);
 }
 
-TEST(Downloader, random_parameters_64M) {
-    DownloaderTest("http://localhost/metro.pivotal.io/64M", 67108864,
+TEST(HTTPDownloader, random_parameters_64M) {
+    HTTPDownloaderTest("http://localhost/testdata/64M", 67108864,
                    "0871a7464a7ff85564f4f95b9ac77321", 51, 7 * 1053, 77 * 87);
 }
 
-TEST(Downloader, random_parameters_256M) {
-    DownloaderTest("http://localhost/metro.pivotal.io/256M", 268435456,
+TEST(HTTPDownloader, random_parameters_256M) {
+    HTTPDownloaderTest("http://localhost/testdata/256M", 268435456,
                    "9cb7c287fdd5a44378798d3e75d2d2a6", 3, 1 * 10523, 77 * 879);
 }
+
+
+
+TEST(ListBucket, s3) {
+	S3Credential g_cred = {KEYID, SECRET};
+
+    ListBucketResult *r =
+        ListBucket(S3HOST, S3BUCKET, S3PREFIX, g_cred);
+    EXPECT_NE(r, (void *)NULL);
+	if(!r) return;
+	ASSERT_EQ(r->contents.size(), 16);
+
+	char urlbuf[256];
+    vector<BucketContent *>::iterator i;
+    for (i = r->contents.begin(); i != r->contents.end(); i++) {
+        BucketContent *p = *i;
+        sprintf(urlbuf, "http://%s/%s/%s", S3HOST, S3BUCKET,
+                p->Key());
+        printf("%s, %d\n", urlbuf, p->Size());
+        // printdata(urlbuf, p->Size(), &cred);
+    }
+
+    delete r;
+	
+}
+
+
+TEST(S3Downloader, simple) {
+	printf("0016\n");
+	S3DwonloadTest("http://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/data0016", 2536018,
+				   "0fd502a303eb8f138f5916ec357721b1", 4, 1024*1024, 65536);
+	printf("0014\n");
+	S3DwonloadTest("http://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/data0014", 4420346,
+				   "68c4a63b721e7af0ae945ce109ca87ad", 4, 1024*1024, 65536);
+}
+
+TEST(S3Downloader, bigfile) {
+	S3DwonloadTest("http://s3-us-west-2.amazonaws.com/test", ,
+				   "68c4a63b721e7af0ae945ce109ca87ad", 4, 1024*1024, 65536);
+}
+
+#endif //AWSTEST

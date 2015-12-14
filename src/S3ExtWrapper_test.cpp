@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "S3ExtWrapper.cpp"
-#include "S3Downloader.cpp"
+
+
 
 void ExtWrapperTest(const char *url, uint64_t buffer_size, const char *md5_str) {
     MD5Calc m;
@@ -34,6 +35,9 @@ void ExtWrapperTest(const char *url, uint64_t buffer_size, const char *md5_str) 
     free(buf);
 }
 
+#ifdef AWSTEST
 TEST(ExtWrapper, normal) {
     ExtWrapperTest("http://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/", 64 * 1024, "WHOLE_FILE_MD5");
 }
+
+#endif

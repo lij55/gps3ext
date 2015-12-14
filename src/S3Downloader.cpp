@@ -438,7 +438,7 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
 }
 
 bool BucketContentComp(BucketContent *a, BucketContent *b) {
-    return strcmp(a->Key(), b->Key()) > 0;
+    return strcmp(a->Key(), b->Key()) < 0;
 }
 
 static bool extractContent(ListBucketResult *result, xmlNode *root_element) {
