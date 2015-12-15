@@ -43,13 +43,12 @@ class S3Reader : public S3ExtBase {
 
    protected:
     virtual string getKeyURL(const string& key);
+    void getNextDownloader();
 
-   private:
+    // private:
     int contentindex;
     Downloader* filedownloader;
     ListBucketResult* keylist;
-
-    void getNextDownloader();
 };
 
 class S3Writer : public S3ExtBase {};

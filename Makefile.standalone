@@ -52,7 +52,7 @@ coverage: test
 	@gcov -r $(testcources) | grep -v test.cpp | grep -A 2 "src/.*.cpp"
 
 clean:
-	rm -f $(app) $(testapp) src/*.o src/*.a src/lib/*.o
+	rm -f $(app) $(testapp) src/*.o src/*.a src/lib/*.o *.o *.a
 	rm -f *.gcov src/*.gcov src/*.gcda src/*.gcno
 
 tags:

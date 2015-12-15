@@ -20,11 +20,6 @@ S3ExtBase::S3ExtBase(const char *url) {
     this->segid = -1;
     this->segnum = -1;
     this->chunksize = -1;
-
-    // Validate url first
-    if (!this->ValidateURL()) {
-        EXTLOG("validate url fail %s\n", url);
-    }
 }
 
 S3ExtBase::~S3ExtBase() {}
@@ -44,6 +39,11 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
     this->contentindex = this->segid;
 
     this->chunksize = chunksize;
+
+    // Validate url first
+    if (!this->ValidateURL()) {
+        EXTLOG("validate url fail %s\n", this->url.c_str());
+    }
 
     // TODO: As separated function for generating url
     stringstream sstr;
