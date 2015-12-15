@@ -168,6 +168,6 @@ struct BucketContent {
 ListBucketResult* ListBucket(const char* host, const char* bucket,
                              const char* path, const S3Credential& cred);
 
-ListBucketResult* ListBucket_FakeHTTP(const char *host, const char *bucket);
+ListBucketResult* ListBucket_FakeHTTP(const char* host, const char* bucket);
 
 #endif

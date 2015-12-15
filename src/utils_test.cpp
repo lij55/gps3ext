@@ -33,14 +33,13 @@ TEST(utils, simplecurl) {
     curl_easy_cleanup(c);
 }
 
-
-TEST(utils, nth) { 
-	const char* teststr = "aaabbbcccaaatttaaa";
-	EXPECT_EQ(find_Nth(teststr, 1, "aaa"), 0);
-	EXPECT_EQ(find_Nth(teststr, 2, "aaa"), 9);
-	EXPECT_EQ(find_Nth(teststr, 3, "aaa"), 15);
-	EXPECT_EQ(find_Nth(teststr, 1, "abc"), -1);
-	EXPECT_EQ(find_Nth(teststr, 1, ""), 0);
+TEST(utils, nth) {
+    const char *teststr = "aaabbbcccaaatttaaa";
+    EXPECT_EQ(find_Nth(teststr, 1, "aaa"), 0);
+    EXPECT_EQ(find_Nth(teststr, 2, "aaa"), 9);
+    EXPECT_EQ(find_Nth(teststr, 3, "aaa"), 15);
+    EXPECT_EQ(find_Nth(teststr, 1, "abc"), -1);
+    EXPECT_EQ(find_Nth(teststr, 1, ""), 0);
 }
 
 #define MD5TESTBUF "abcdefghijklmnopqrstuvwxyz\n"

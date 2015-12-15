@@ -61,7 +61,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
         EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
 
-		// TODO: Get real segment number and segment id
+        // TODO: Get real segment number and segment id
         if (!myData || !myData->Init(0, 1, 64 * 1024 * 1024)) {
             if (myData) delete myData;
             ereport(ERROR, (0, errmsg("Init S3 extension fail")));
@@ -130,9 +130,9 @@ Datum s3_export(PG_FUNCTION_ARGS) {
         myData = CreateExtWrapper(
             "http://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/");
 
-		// EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
+        // EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
 
-		// TODO: Get real segment number and segid
+        // TODO: Get real segment number and segment id
         if (!myData || !myData->Init(0, 1, 64 * 1024 * 1024)) {
             if (myData) delete myData;
             ereport(ERROR, (0, errmsg("Init S3 extension fail")));

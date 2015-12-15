@@ -8,16 +8,16 @@
 using std::string;
 
 class S3ExtBase {
- public:
-	S3ExtBase(const char* url);
-	virtual ~S3ExtBase();
-	virtual bool Init(int segid, int segnum,
-                      int chunksize) = 0;
-	virtual bool TransferData(char* data, size_t& len) = 0;
-	virtual bool Destroy() = 0;
- protected:
+   public:
+    S3ExtBase(const char* url);
+    virtual ~S3ExtBase();
+    virtual bool Init(int segid, int segnum, int chunksize) = 0;
+    virtual bool TransferData(char* data, size_t& len) = 0;
+    virtual bool Destroy() = 0;
+
+   protected:
     S3Credential cred;
-	
+
     string url;
     string schema;
     string bucket;
@@ -27,33 +27,32 @@ class S3ExtBase {
     int segid;
     int segnum;
 
-	int concurrent_num;
-	int chunksize;
+    int concurrent_num;
+    int chunksize;
 
-	virtual bool ValidateURL();
+    virtual bool ValidateURL();
 };
 
 class S3Reader : public S3ExtBase {
- public:
-	S3Reader(const char* url);
-	virtual ~S3Reader();
-	virtual bool Init(int segid, int segnum,
-                      int chunksize);
-	virtual bool TransferData(char* data, size_t& len);
-	virtual bool Destroy();
- protected:
-	virtual string getKeyURL(const string& key);
- private:
-	int contentindex;
+   public:
+    S3Reader(const char* url);
+    virtual ~S3Reader();
+    virtual bool Init(int segid, int segnum, int chunksize);
+    virtual bool TransferData(char* data, size_t& len);
+    virtual bool Destroy();
+
+   protected:
+    virtual string getKeyURL(const string& key);
+
+   private:
+    int contentindex;
     Downloader* filedownloader;
     ListBucketResult* keylist;
-    
+
     void getNextDownloader();
 };
 
-class S3Writer : public S3ExtBase {
-};
-
+class S3Writer : public S3ExtBase {};
 
 extern "C" S3ExtBase* CreateExtWrapper(const char* url);
 
