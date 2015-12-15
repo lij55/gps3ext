@@ -46,6 +46,7 @@ bool S3Reader_fake::Init(int segid, int segnum, int chunksize) {
 
     // TODO: As separated function for generating url
     this->keylist = ListBucket_FakeHTTP("localhost", this->bucket.c_str());
+    //this->keylist = ListBucket_FakeHTTP("localhost", "metro.pivotal.io");
 
     if (!this->keylist) {
         return false;
@@ -102,7 +103,7 @@ void ExtWrapperTest(const char *url, uint64_t buffer_size,
 
     while (1) {
         nread = buf_len;
-        myData->TransferData(buf, nread);
+        ASSERT_TRUE(myData->TransferData(buf, nread));
         if (nread == 0) break;
         m.Update(buf, nread);
     }
