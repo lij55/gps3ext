@@ -1,13 +1,13 @@
 * Build
 
-  *=make=* to build the extension for GPDB.
+  =make= to build the extension for GPDB.
 
-  *=make -f Makefile.standalone=* to build the standalone application.
+  =make -f Makefile.standalone= to build the standalone application.
 
 * Test
 ** Run Unit Test
   In order to running test, it need [[https://github.com/GPDBUnite/unite][uniteserver]] to serve the test content and recevie log.
-  *=make -f Makefile.standalone test=*
+  =make -f Makefile.standalone test=
 
 ** Test Coverage
-   *=make -f Makefile.standalone coverage=*
+   =make -f Makefile.standalone coverage=
