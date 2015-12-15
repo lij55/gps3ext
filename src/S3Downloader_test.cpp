@@ -149,8 +149,8 @@ TEST(HTTPDownloader, equal) {
 }
 
 TEST(HTTPDownloader, one_byte) {
-    HTTPDownloaderTest("http://localhost/testdata/8M", 8388608,
-                       "22129b81bf8f96a06a8b7f3d2a683588", 4, 4 * 1024, 1);
+    HTTPDownloaderTest("http://localhost/testdata/8K", 8192,
+                       "f92ad4ae5f16a8d04f87e801af5115dc", 4, 4 * 1024, 1);
 }
 
 TEST(HTTPDownloader, over_flow) {
