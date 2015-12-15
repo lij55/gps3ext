@@ -45,14 +45,13 @@ bool S3Reader_fake::Init(int segid, int segnum, int chunksize) {
     }
 
     // TODO: As separated function for generating url
-    this->keylist = ListBucket_FakeHTTP("localhost", "metro.pivotal.io");
+    this->keylist = ListBucket_FakeHTTP("localhost", this->bucket.c_str());
 
     if (!this->keylist) {
         return false;
     }
 
     this->getNextDownloader();
-
     return this->filedownloader ? true : false;
 }
 
@@ -67,7 +66,15 @@ string S3Reader_fake::getKeyURL(const string &key) {
 bool S3Reader_fake::ValidateURL() {
     this->schema = "http";
     this->region = "raycom";
-    this->bucket = "metro.pivotal.io";
+    int ibegin,iend;
+    ibegin = find_Nth(this->url, 3, "/");
+    iend = find_Nth(this->url, 4, "/");
+
+    if ((iend == string::npos) || (ibegin == string::npos)) {
+        return false;
+    }
+    this->bucket = url.substr(ibegin + 1, iend - ibegin - 1);
+
     this->prefix = "";
     return true;
 }
@@ -174,5 +181,10 @@ TEST(FakeExtWrapper, normal_4segs) {
                    "238affbb831ff27df9d09afeeb2e59f9", 2, 4, 64*1024*1024);
     ExtWrapperTest("http://localhost/metro.pivotal.io/", 64 * 1024,
                    "dceb001d03d54d61874d27c9f04596b1", 3, 4, 64*1024*1024);
+}
+
+TEST(FakeExtWrapper, bigfile) {
+    ExtWrapperTest("http://localhost/bigfile/", 64 * 1024,
+                   "83c7ab787e3f1d1e7880dcae954ab4a4", 0, 1, 64*1024*1024);
 }
 
