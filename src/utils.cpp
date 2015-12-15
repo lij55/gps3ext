@@ -42,19 +42,6 @@ bool gethttpnow(char datebuf[65]) {  //('D, d M Y H:i:s T')
     return true;
 }
 
-bool lowercase(char *out, const char *in) {
-    if (!out || !in) {  // invalid string params
-        return false;
-    }
-    while (*in) {
-        //*out++ = (*in >= 'A' && *in <= 'Z') ? *in|0x60 : *in;
-        *out++ = *in;
-        in++;
-    }
-    *out = 0;
-    return true;
-}
-
 void tolower(char *buf) {
     do {
         if (*buf >= 'A' && *buf <= 'Z') *buf |= 0x60;
@@ -119,7 +106,7 @@ char *Base64Encode(const char *buffer,
     return ret;  // s
 }
 
-bool sha256(char *string, char outputBuffer[65]) {
+bool sha256(const char *string, char outputBuffer[65]) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256_CTX sha256;
     if (!string) return false;
@@ -134,12 +121,13 @@ bool sha256(char *string, char outputBuffer[65]) {
     return true;
 }
 
+// not returning the normal hex result
 char *sha1hmac(const char *str, const char *secret) {
     return (char *)HMAC(EVP_sha1(), secret, strlen(secret),
                         (const unsigned char *)str, strlen(str), NULL, NULL);
 }
 
-bool sha256hmac(char *str, char out[65], char *secret) {
+bool sha256hmac(const char *str, char out[65], const char *secret) {
     unsigned char hash[32];
     unsigned int len = 32;
     int i;
