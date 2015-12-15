@@ -12,7 +12,7 @@ objects = $(sources:.cpp=.o)
 testobjs = $(testcources:.cpp=.o)
 
 app = s3fetch
-testapp = $(app)_test
+testapp = tests3
 
 # Usually you shouldn't tweak such internal variables, indicated by a
 # trailing _.

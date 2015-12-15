@@ -179,13 +179,13 @@ TEST(HTTPDownloader, random_parameters_1M) {
 
 TEST(HTTPDownloader, random_parameters_1G) {
     HTTPDownloaderTest("http://localhost/testdata/1G", 1073741824,
-                       "a2cb2399eb8bc97084aed673e5d09f4d", 9, 42 * 1024,
+                       "a2cb2399eb8bc97084aed673e5d09f4d", 9, 42 * 1023,
                        513 * 1025 * 37);
 }
 
 TEST(HTTPDownloader, random_parameters_8M) {
     HTTPDownloaderTest("http://localhost/testdata/8M", 8388608,
-                       "22129b81bf8f96a06a8b7f3d2a683588", 77, 7 * 1024,
+                       "22129b81bf8f96a06a8b7f3d2a683588", 77, 7 * 10211,
                        777 * 1025);
 }
 
