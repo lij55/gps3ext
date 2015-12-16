@@ -1,6 +1,11 @@
 #ifndef _UTILFUNCTIONS_
 #define _UTILFUNCTIONS_
 
+#include <cstdio>
+#include <cstdlib>
+#include <cstdint>
+#include <cstring>
+
 bool gethttpnow(char datebuf[65]);
 
 bool lowercase(char* out, const char* in);
@@ -46,5 +51,63 @@ class MD5Calc {
     unsigned char md5[17];
     string result;
 };
+
+#include <mutex>
+#include <queue>
+#include <condition_variable>
+using std::mutex;
+using std::condition_variable;
+using std::queue;
+using std::unique_lock;
+
+template<typename Data>
+class concurrent_queue
+{
+ private:
+    queue<Data> _q;
+    mutable mutex _m;
+    condition_variable _c;
+ public:
+    void enQ(Data const& data)
+    {
+        _m.lock();
+        bool isEmpty = _q.empty();
+        _q.push(data);
+        if(isEmpty)  {
+            _c.notify_one();
+        }
+        _m.unlock();
+    }
+
+    void deQ(Data& popped_value)
+    {
+        unique_lock<mutex> lk(_m);
+        while(_q.empty()) {
+            _c.wait(lk);
+        }       
+        popped_value=_q.front();
+        _q.pop();
+    }
+};
+
+class DataBuffer {
+public:
+    DataBuffer(uint64_t size);
+    ~DataBuffer();
+    void reset() {length = 0; };
+
+    uint64_t append(const char* buf, uint64_t len);   // ret < len means full
+    const char* getdata() { return data; } ;
+    uint64_t len() { return this->length; };
+    bool full() {return maxsize == length; };
+    bool empty() {return 0 == length; };
+
+private:
+    const uint64_t maxsize;
+    uint64_t length;
+    // uint64_t offset;
+    char* data;
+};
+
 
 #endif  // _UTILFUNCTIONS_

@@ -255,3 +255,24 @@ const char *MD5Calc::Get() {
     MD5_Init(&this->c);
     return this->result.c_str();
 }
+
+
+
+DataBuffer::DataBuffer(uint64_t size) 
+    :maxsize(size)
+    ,length(0) {
+    this->data = (char*) malloc(this->maxsize);
+}
+
+DataBuffer::~DataBuffer() {
+    if(this->data) {
+        free(this->data);
+    }
+}
+
+uint64_t DataBuffer::append(const char* buf, uint64_t len) {
+    uint64_t copylen = std::min(len, maxsize - length);
+    memcpy(this->data + length, buf, copylen);
+    this->length += copylen;
+    return copylen;
+}
