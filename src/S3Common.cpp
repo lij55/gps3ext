@@ -137,6 +137,8 @@ const char *GetFieldString(HeaderField f) {
             return "Expect";
         case AUTHORIZATION:
             return "Authorization";
+        case ETAG:
+            return "ETag";
         default:
             return "unknown";
     }
@@ -210,4 +212,20 @@ char *UrlParser::extract_field(const struct http_parser_url *u,
         }
     }
     return ret;
+}
+
+uint64_t ParserCallback(void *contents, uint64_t size, uint64_t nmemb,
+                               void *userp) {
+    uint64_t realsize = size * nmemb;
+    int res;
+    // printf("%.*s",realsize, (char*)contents);
+    struct XMLInfo *pxml = (struct XMLInfo *)userp;
+    if (!pxml->ctxt) {
+        pxml->ctxt = xmlCreatePushParserCtxt(NULL, NULL, (const char *)contents,
+                                             realsize, "resp.xml");
+        return realsize;
+    } else {
+        res = xmlParseChunk(pxml->ctxt, (const char *)contents, realsize, 0);
+    }
+    return realsize;
 }

@@ -374,27 +374,6 @@ BucketContent *CreateBucketContentItem(const char *key, uint64_t size) {
     return ret;
 }
 
-struct XMLInfo {
-    xmlParserCtxtPtr ctxt;
-};
-
-// void S3fetch_curl(const char* url, )
-static uint64_t ParserCallback(void *contents, uint64_t size, uint64_t nmemb,
-                               void *userp) {
-    uint64_t realsize = size * nmemb;
-    int res;
-    // printf("%.*s",realsize, (char*)contents);
-    struct XMLInfo *pxml = (struct XMLInfo *)userp;
-    if (!pxml->ctxt) {
-        pxml->ctxt = xmlCreatePushParserCtxt(NULL, NULL, (const char *)contents,
-                                             realsize, "resp.xml");
-        return realsize;
-    } else {
-        res = xmlParseChunk(pxml->ctxt, (const char *)contents, realsize, 0);
-    }
-    return realsize;
-}
-
 // require curl 7.17 higher
 xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
                           const S3Credential &cred) {
