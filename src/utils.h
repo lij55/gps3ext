@@ -74,7 +74,7 @@ class concurrent_queue
         bool isEmpty = _q.empty();
         _q.push(data);
         if(isEmpty)  {
-            _c.notify_one();
+            _c.notify_all();
         }
         _m.unlock();
     }

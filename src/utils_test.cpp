@@ -79,7 +79,6 @@ TEST(utils, sha256hmac) {
 concurrent_queue<int> q;
 void* worker ( void* a) {
     int r;
-    srand(time(NULL));
     while(1) {
         q.deQ(r);
         if ( r == -1 ) 
