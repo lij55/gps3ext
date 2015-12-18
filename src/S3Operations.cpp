@@ -18,18 +18,22 @@
 using std::string;
 using std::stringstream;
 
+struct MemoryData {
+    char *data;
+    size_t size;
+};
+
 static size_t mem_read_callback(void *ptr, size_t size, size_t nmemb,
                                 void *userp) {
-    char *readptr = (char *)userp;
-    size_t sizeleft = (size_t)strlen((const char *)userp);
+    struct MemoryData *puppet = (struct MemoryData *)userp;
 
     if (size * nmemb < 1) return 0;
 
-    if (sizeleft) {
-        *(char *)ptr = readptr[0]; /* copy one single byte */
+    if (puppet->size) {
+        *(char *)ptr = puppet->data[0]; /* copy one single byte */
 
-        readptr++;  /* advance pointer */
-        sizeleft--; /* less data left */
+        puppet->data++; /* advance pointer */
+        puppet->size--; /* less data left */
 
         return 1; /* we return 1 byte at a time! */
     }
@@ -37,7 +41,26 @@ static size_t mem_read_callback(void *ptr, size_t size, size_t nmemb,
     return 0; /* no more data left to deliver */
 }
 
-// need free
+static size_t header_write_callback(void *contents, size_t size, size_t nmemb,
+                                    void *userp) {
+    size_t realsize = size * nmemb;
+    struct MemoryData *puppet = (struct MemoryData *)userp;
+
+    puppet->data = (char *)realloc(puppet->data, puppet->size + realsize + 1);
+    if (puppet->data == NULL) {
+        /* out of memory! */
+        printf("not enough memory (realloc returned NULL)\n");
+        return 0;
+    }
+
+    memcpy(&(puppet->data[puppet->size]), contents, realsize);
+    puppet->size += realsize;
+    puppet->data[puppet->size] = 0;
+
+    return realsize;
+}
+
+// XXX need free
 const char *GetUploadId(const char *host, const char *bucket,
                         const char *obj_name, const S3Credential &cred) {
     // POST /ObjectName?uploads HTTP/1.1
@@ -127,13 +150,15 @@ const char *GetUploadId(const char *host, const char *bucket,
 
 #if 0
 const char *PartPutS3Object(const char *host, const char *bucket,
-                      const char *obj_name, S3Credential cred,
-		      const char *data, uint64_t data_size,
-		      uint64_t part_number, const char *upload_id) {
+                            const char *obj_name, const S3Credential &cred,
+                            const char *data, uint64_t data_size,
+                            uint64_t part_number, const char *upload_id) {
     std::stringstream url;
     std::stringstream path_with_query;
     XMLInfo xml;
     xml.ctxt = NULL;
+    struct MemoryData read_data = {data, data_size};
+    struct MemoryData header_data = {malloc(1), 0};
 
     if (!host || !bucket || !obj_name) return NULL;
 
@@ -160,8 +185,19 @@ const char *PartPutS3Object(const char *host, const char *bucket,
 
     CURL *curl = curl_easy_init();
     if (curl) {
+        /* specify target URL, and note that this URL should include a file
+           name, not only a directory */
+        curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
+
+        /* now specify which file/data to upload */
+        curl_easy_setopt(curl, CURLOPT_READDATA, (void *)read_data);
+
         /* we want to use our own read function */
         curl_easy_setopt(curl, CURLOPT_READFUNCTION, mem_read_callback);
+
+        /* provide the size of the upload, we specicially typecast the value
+           to curl_off_t since we must be sure to use the correct data size */
+        curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)data_size);
 
         /* enable uploading */
         curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
@@ -169,19 +205,11 @@ const char *PartPutS3Object(const char *host, const char *bucket,
         /* HTTP PUT please */
         curl_easy_setopt(curl, CURLOPT_PUT, 1L);
 
-        /* specify target URL, and note that this URL should include a file
-           name, not only a directory */
-        curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
-
-        /* now specify which file/data to upload */
-        curl_easy_setopt(curl, CURLOPT_READDATA, data);
-
-        /* provide the size of the upload, we specicially typecast the value
-           to curl_off_t since we must be sure to use the correct data size */
-        curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)data_size);
-
         // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
+
+        curl_easy_setopt(curl, CURLOPT_HEADERDATA, header_data);
+        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_write_callback);
 
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&xml);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ParserCallback);
@@ -190,7 +218,6 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     }
 
     struct curl_slist *chunk = header->GetList();
-
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
 
     CURLcode res = curl_easy_perform(curl);
@@ -207,8 +234,9 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     // Content-Length: 0
     // Connection: keep-alive
     // Server: AmazonS3
+
     std::ostringstream out;
-    out << res;
+    out << header_data.data;
 
     // TODO general header content extracting func
     uint64_t etag_start_pos = out.str().find("ETag: ") + 6;
@@ -236,7 +264,7 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     xmlNodePtr cur = root_element->xmlChildrenNode;
     while (cur != NULL) {
         if (!xmlStrcmp(cur->name, (const xmlChar *)"Code")) {
-	  response_code = xmlNodeGetContent(cur);
+            response_code = xmlNodeGetContent(cur);
             break;
         }
 
@@ -244,7 +272,7 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     }
 
     if (response_code) {
-	    std::cout << response_code << std::endl;
+        std::cout << response_code << std::endl;
     }
 
     xmlFreeParserCtxt(xml.ctxt);
@@ -313,15 +341,15 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
 
     CURL *curl = curl_easy_init();
     if (curl) {
+        /* specify target URL, and note that this URL should include a file
+           name, not only a directory */
+        curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
+
         /* we want to use our own read function */
         curl_easy_setopt(curl, CURLOPT_READFUNCTION, mem_read_callback);
 
         /* now specify which file/data to upload */
         curl_easy_setopt(curl, CURLOPT_READDATA, data);
-
-        /* specify target URL, and note that this URL should include a file
-           name, not only a directory */
-        curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
 
         /* provide the size of the upload, we specicially typecast the value
            to curl_off_t since we must be sure to use the correct data size */
@@ -342,7 +370,6 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     }
 
     struct curl_slist *chunk = header->GetList();
-
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
 
     CURLcode res = curl_easy_perform(curl);
@@ -366,9 +393,6 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     //   <ETag>"3858f62230ac3c915f300c664312c11f-9"</ETag>
     // </CompleteMultipartUploadResult>
 
-    std::ostringstream out;
-    out << res;
-
     // <Error>
     //   <Code>AccessDenied</Code>
     //   <Message>Access Denied</Message>
@@ -382,7 +406,7 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     xmlNodePtr cur = root_element->xmlChildrenNode;
     while (cur != NULL) {
         if (!xmlStrcmp(cur->name, (const xmlChar *)"Code")) {
-	  response_code = xmlNodeGetContent((char*)cur);
+            response_code = xmlNodeGetContent((char *)cur);
             break;
         }
 
@@ -390,7 +414,7 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     }
 
     if (response_code) {
-      std::cout << response_code << std::endl;
+        std::cout << response_code << std::endl;
     }
 
     xmlFreeParserCtxt(xml.ctxt);
@@ -404,7 +428,6 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
 
     return true;
 }
-
 
 //=================== XXX below is deprecated XXX ====================
 
@@ -500,5 +523,4 @@ bool DeleteS3Object(const char *host, const char *bucket, const char *url,
 
     return res;
 }
-
-#endif  // 0
+#endif
