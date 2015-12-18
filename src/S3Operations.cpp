@@ -62,7 +62,7 @@ const char *GetUploadId(const char *host, const char *bucket,
     //       <UploadId>VXBsb2FkIElEIGZvciA2aWWpbmcncyBteS1tb3ZpZS5tMnRzIHVwbG9hZA</UploadId>
     //       </InitiateMultipartUploadResult>
     std::stringstream url;
-    std::stringstream sstr;
+    std::stringstream path_with_query;
     XMLInfo xml;
     xml.ctxt = NULL;
 
@@ -73,25 +73,28 @@ const char *GetUploadId(const char *host, const char *bucket,
     HeaderContent *header = new HeaderContent();
     header->Add(HOST, host);
     UrlParser p(url.str().c_str());
-    SignPOSTv2(header, p.Path(), "uploads", cred);
+    path_with_query << p.Path() << "?uploads";
+    SignPOSTv2(header, path_with_query.str().c_str(), cred);
 
     CURL *curl = curl_easy_init();
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+
+        // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
+
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&xml);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ParserCallback);
+
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "uploads");
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)strlen("uploads"));
     } else {
         return NULL;
     }
 
-    // curl_easy_setopt(curl, CURLOPT_POST, 1L);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&xml);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ParserCallback);
     struct curl_slist *chunk = header->GetList();
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
-
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "uploads");
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)strlen("uploads"));
 
     CURLcode res = curl_easy_perform(curl);
 
@@ -128,7 +131,7 @@ const char *PartPutS3Object(const char *host, const char *bucket,
 		      const char *data, uint64_t data_size,
 		      uint64_t part_number, const char *upload_id) {
     std::stringstream url;
-    std::stringstream sstr;
+    std::stringstream path_with_query;
     XMLInfo xml;
     xml.ctxt = NULL;
 
@@ -150,7 +153,10 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     header->Add(CONTENTTYPE, "text/plain");
     header->Add(CONTENTLENGTH, std::to_string(data_size));
     UrlParser p(url.str().c_str());
-    SignPUTv2(header, p.Path(), cred);
+    // XXX to make SignXXXv2() generic
+    path_with_query << p.Path() << "?partNumber=" << part_number
+                    << "&uploadId=" << upload_id;
+    SignPUTv2(header, path_with_query.str().c_str(), cred);
 
     CURL *curl = curl_easy_init();
     if (curl) {
@@ -251,9 +257,11 @@ const char *PartPutS3Object(const char *host, const char *bucket,
 
 bool CompleteMultiPutS3(const char *host, const char *bucket,
                         const char *obj_name, const char *upload_id,
-			const char **etag_array, uint64_t count, S3Credential cred) {
+                        const char **etag_array, uint64_t count,
+                        const S3Credential &cred) {
     std::stringstream url;
-    std::stringstream sstr;
+    std::stringstream query;
+    std::stringstream path_with_query;
     XMLInfo xml;
     xml.ctxt = NULL;
 
@@ -295,12 +303,13 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     data = body.str();
     data_size = strlen(body.str());
 
-    url << "?uploadId=" << upload_id;
-
     HeaderContent *header = new HeaderContent();
     header->Add(HOST, host);
     UrlParser p(url.str().c_str());
-    SignPOSTv2(header, p.Path(), cred);
+    path_with_query << p.Path() << "?uploadId=" << upload_id;
+    SignPOSTv2(header, path_with_query.str().c_str(), cred);
+
+    query << "uploadId=" << upload_id;
 
     CURL *curl = curl_easy_init();
     if (curl) {
@@ -320,6 +329,11 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
 
         // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
+
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, query.str().c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE,
+                         (long)strlen(query.str().c_str()));
 
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&xml);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ParserCallback);
