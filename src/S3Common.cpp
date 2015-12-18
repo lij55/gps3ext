@@ -58,19 +58,22 @@ bool SignPUTv2(HeaderContent *h, const char *path, const S3Credential &cred) {
     return true;
 }
 
-bool SignPOSTv2(HeaderContent *h, const char *path, const S3Credential &cred) {
+bool SignPOSTv2(HeaderContent *h, const char *path, const char* query, const S3Credential &cred) {
     char timestr[64];
-    string md5str;
+    //string md5str;
     string typestr;
 
     gethttpnow(timestr);
     h->Add(DATE, timestr);
+    // XXX remove this workaround
+    h->Add(CONTENTTYPE ,"application/x-www-form-urlencoded");
     stringstream sstr;
-    md5str = h->Get(CONTENTMD5);
+    //md5str = h->Get(CONTENTMD5);
     typestr = h->Get(CONTENTTYPE);
 
-    sstr << "POST\n" << md5str << "\n" << typestr << "\n" << timestr << "\n"
-         << path;
+    sstr << "POST\n" <<  "\n" << typestr << "\n" << timestr << "\n"
+         << path << "?" << query;
+    printf("%s\n", sstr.str().c_str());
     char *tmpbuf = sha1hmac(sstr.str().c_str(), cred.secret.c_str());
     int len = strlen(tmpbuf);
     char *signature = Base64Encode(tmpbuf, len);
