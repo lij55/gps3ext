@@ -52,6 +52,7 @@ static size_t header_write_callback(void *contents, size_t size, size_t nmemb,
     if (puppet->data == NULL) {
         /* out of memory! */
         printf("not enough memory (realloc returned NULL)\n");
+        // returning 0 as error is the standard behavior of fwrite()
         return 0;
     }
 
@@ -244,7 +245,9 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     // TODO general header content extracting func
     uint64_t etag_start_pos = out.str().find("ETag: ") + 6;
     std::string etag_to_end = out.str().substr(etag_start_pos);
-    uint64_t etag_len = etag_to_end.find("\n") - 1;
+    // RFC 2616 states "HTTP/1.1 defines the sequence CR LF as the end-of-line
+    // marker for all protocol elements except the entity-body"
+    uint64_t etag_len = etag_to_end.find("\r") - 1;
 
     const char *etag = etag_to_end.substr(0, etag_len).c_str();
 
