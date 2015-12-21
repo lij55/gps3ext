@@ -26,19 +26,21 @@ struct MemoryData {
 static size_t mem_read_callback(void *ptr, size_t size, size_t nmemb,
                                 void *userp) {
     struct MemoryData *puppet = (struct MemoryData *)userp;
+    uint64_t count = size * nmemb;
 
-    if (size * nmemb < 1) return 0;
+    if (count < 1) return 0;
 
-    if (puppet->size) {
+    while (count && puppet->size) {
         *(char *)ptr = puppet->data[0]; /* copy one single byte */
 
         puppet->data++; /* advance pointer */
         puppet->size--; /* less data left */
 
-        return 1; /* we return 1 byte at a time! */
+        count--;
     }
 
-    return 0; /* no more data left to deliver */
+    return size * nmemb - count; /* this will be 0 if puppet->size is 0, which
+                                    means no more data left to deliver */
 }
 
 static size_t header_write_callback(void *contents, size_t size, size_t nmemb,
