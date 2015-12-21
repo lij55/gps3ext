@@ -66,7 +66,8 @@ bool SignPOSTv2(HeaderContent *h, const char *path, const S3Credential &cred) {
     gethttpnow(timestr);
     h->Add(DATE, timestr);
     // XXX remove this workaround
-    h->Add(CONTENTTYPE ,"application/x-www-form-urlencoded");
+    // https://en.wikipedia.org/wiki/Percent-encoding
+    h->Add(CONTENTTYPE, "application/x-www-form-urlencoded");
     stringstream sstr;
     //md5str = h->Get(CONTENTMD5);
     typestr = h->Get(CONTENTTYPE);
