@@ -44,6 +44,17 @@ TEST(Uploader, get_upload_id_long_url_directories) {
 }
 
 /*
+TEST(Uploader, upload) {
+    S3Credential g_cred = {KEYID, SECRET};
+
+    const char *upload_id = GetUploadId(S3HOST, S3BUCKET, "test/data1234", g_cred);
+    const char *etag_1 = PartPutS3Object(S3HOST, S3BUCKET, "test/data1234", g_cred, "content_string_lol", 18, 1, upload_id);
+    const char *etag_array[1] = { etag_1 };
+    bool ret = CompleteMultiPutS3(S3HOST, S3BUCKET, "test/data1234", upload_id, etag_array, 1, g_cred);
+
+    EXPECT_TRUE(ret);
+}
+
 // need to convert url string to Percent-encoding
 // https://en.wikipedia.org/wiki/Percent-encoding
 TEST(Uploader, get_upload_id_spaces) {

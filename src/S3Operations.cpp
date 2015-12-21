@@ -153,6 +153,7 @@ const char *GetUploadId(const char *host, const char *bucket,
 }
 
 #if 0
+// XXX need free
 const char *PartPutS3Object(const char *host, const char *bucket,
                             const char *obj_name, const S3Credential &cred,
                             const char *data, uint64_t data_size,
@@ -161,8 +162,8 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     std::stringstream path_with_query;
     XMLInfo xml;
     xml.ctxt = NULL;
-    struct MemoryData read_data = {data, data_size};
-    struct MemoryData header_data = {malloc(1), 0};
+    struct MemoryData read_data = {(char *)data, data_size};
+    struct MemoryData header_data = {(char *)malloc(1), 0};
 
     if (!host || !bucket || !obj_name) return NULL;
 
@@ -182,7 +183,6 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     header->Add(CONTENTTYPE, "text/plain");
     header->Add(CONTENTLENGTH, std::to_string(data_size));
     UrlParser p(url.str().c_str());
-    // XXX to make SignXXXv2() generic
     path_with_query << p.Path() << "?partNumber=" << part_number
                     << "&uploadId=" << upload_id;
     SignPUTv2(header, path_with_query.str().c_str(), cred);
@@ -194,7 +194,7 @@ const char *PartPutS3Object(const char *host, const char *bucket,
         curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
 
         /* now specify which file/data to upload */
-        curl_easy_setopt(curl, CURLOPT_READDATA, (void *)read_data);
+        curl_easy_setopt(curl, CURLOPT_READDATA, (void *)&read_data);
 
         /* we want to use our own read function */
         curl_easy_setopt(curl, CURLOPT_READFUNCTION, mem_read_callback);
@@ -271,7 +271,7 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     xmlNodePtr cur = root_element->xmlChildrenNode;
     while (cur != NULL) {
         if (!xmlStrcmp(cur->name, (const xmlChar *)"Code")) {
-            response_code = xmlNodeGetContent(cur);
+            response_code = strdup((const char *)xmlNodeGetContent(cur));
             break;
         }
 
@@ -329,14 +329,14 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     std::stringstream body;
 
     body << "<CompleteMultipartUpload>";
-    for (i = 0; i < count; ++i) {
+    for (int i = 0; i < count; ++i) {
         body << "<Part><PartNumber>" << i << "</PartNumber><ETag>"
              << etag_array[i] << "</ETag></Part>";
     }
     body << "</CompleteMultipartUpload>\n";
 
-    data = body.str();
-    data_size = strlen(body.str());
+    const char *data = body.str().c_str();
+    uint64_t data_size = strlen(body.str().c_str());
 
     HeaderContent *header = new HeaderContent();
     header->Add(HOST, host);
@@ -414,7 +414,7 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     xmlNodePtr cur = root_element->xmlChildrenNode;
     while (cur != NULL) {
         if (!xmlStrcmp(cur->name, (const xmlChar *)"Code")) {
-            response_code = xmlNodeGetContent((char *)cur);
+            response_code = (char *)xmlNodeGetContent(cur);
             break;
         }
 
@@ -425,7 +425,6 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
         std::cout << response_code << std::endl;
     }
 
-    xmlFreeParserCtxt(xml.ctxt);
 
     curl_slist_free_all(chunk);
     curl_easy_cleanup(curl);
@@ -434,5 +433,8 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
         return false;
     }
 
+    xmlFreeParserCtxt(xml.ctxt);
+
     return true;
 }
+#endif
