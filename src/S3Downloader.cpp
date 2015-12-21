@@ -476,6 +476,7 @@ ListBucketResult *ListBucket(const char *host, const char *bucket,
     xmlParserCtxtPtr xmlcontext =
         DoGetXML(host, bucket, sstr.str().c_str(), cred);
     xmlNode *root_element = xmlDocGetRootElement(xmlcontext->myDoc);
+    if (!root_element) return NULL;
     ListBucketResult *result = new ListBucketResult();
 
     if (!result) {
@@ -526,6 +527,7 @@ ListBucketResult *ListBucket_FakeHTTP(const char *host, const char *bucket) {
     xmlParseChunk(xml.ctxt, "", 0, 1);
 
     xmlNode *root_element = xmlDocGetRootElement(xml.ctxt->myDoc);
+    if (!root_element) return NULL;
     ListBucketResult *result = new ListBucketResult();
     if (!result) {
         // allocate fail

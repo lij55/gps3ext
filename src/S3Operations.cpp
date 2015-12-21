@@ -130,6 +130,7 @@ const char *GetUploadId(const char *host, const char *bucket,
     curl_easy_cleanup(curl);
 
     xmlNode *root_element = xmlDocGetRootElement(xml.ctxt->myDoc);
+    if (!root_element) return NULL;
 
     char *upload_id = NULL;
     xmlNodePtr cur = root_element->xmlChildrenNode;
@@ -259,6 +260,7 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     // </Error>
     xmlParseChunk(xml.ctxt, "", 0, 1);
     xmlNode *root_element = xmlDocGetRootElement(xml.ctxt->myDoc);
+    if (!root_element) return NULL;
 
     char *response_code = NULL;
     xmlNodePtr cur = root_element->xmlChildrenNode;
@@ -401,6 +403,7 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     // </Error>
     xmlParseChunk(xml.ctxt, "", 0, 1);
     xmlNode *root_element = xmlDocGetRootElement(xml.ctxt->myDoc);
+    if (!root_element) return NULL;
 
     char *response_code = NULL;
     xmlNodePtr cur = root_element->xmlChildrenNode;
