@@ -41,12 +41,11 @@ class HeaderContent {
     std::map<HeaderField, string> fields;
 };
 
-bool SignGETv2(HeaderContent* h, const char* path, const S3Credential& cred);
-bool SignPUTv2(HeaderContent* h, const char* path, const S3Credential& cred);
-bool SignPOSTv2(HeaderContent* h, const char* path, const S3Credential& cred);
-bool SignLISTv2(HeaderContent* h, const char* path, const S3Credential& cred);
-bool SignFETCHv2(HeaderContent* h, const char* path, const S3Credential& cred);
-bool SignDELETEv2(HeaderContent* h, const char* path, const S3Credential& cred);
+bool SignGETv2(HeaderContent* h, const char* path_with_query, const S3Credential& cred);
+
+bool SignPUTv2(HeaderContent* h, const char* path_with_query, const S3Credential& cred);
+
+bool SignPOSTv2(HeaderContent* h, const char* path_with_query, const S3Credential& cred);
 
 class UrlParser {
    public:

@@ -13,7 +13,7 @@
 
 using std::stringstream;
 
-bool SignGETv2(HeaderContent *h, const char *path, const S3Credential &cred) {
+bool SignGETv2(HeaderContent *h, const char *path_with_query, const S3Credential &cred) {
     char timestr[64];
 
     // CONTENT_LENGTH is not a part of StringToSign
@@ -22,7 +22,7 @@ bool SignGETv2(HeaderContent *h, const char *path, const S3Credential &cred) {
     gethttpnow(timestr);
     h->Add(DATE, timestr);
     stringstream sstr;
-    sstr << "GET\n\n\n" << timestr << "\n" << path;
+    sstr << "GET\n\n\n" << timestr << "\n" << path_with_query;
     char *tmpbuf = sha1hmac(sstr.str().c_str(), cred.secret.c_str());
     int len = strlen(tmpbuf);
     char *signature = Base64Encode(tmpbuf, len);
@@ -35,7 +35,7 @@ bool SignGETv2(HeaderContent *h, const char *path, const S3Credential &cred) {
     return true;
 }
 
-bool SignPUTv2(HeaderContent *h, const char *path, const S3Credential &cred) {
+bool SignPUTv2(HeaderContent *h, const char *path_with_query, const S3Credential &cred) {
     char timestr[64];
     string typestr;
 
@@ -45,7 +45,7 @@ bool SignPUTv2(HeaderContent *h, const char *path, const S3Credential &cred) {
 
     typestr = h->Get(CONTENTTYPE);
 
-    sstr << "PUT\n\n" << typestr << "\n" << timestr << "\n" << path;
+    sstr << "PUT\n\n" << typestr << "\n" << timestr << "\n" << path_with_query;
     char *tmpbuf = sha1hmac(sstr.str().c_str(), cred.secret.c_str());
     int len = strlen(tmpbuf);
     char *signature = Base64Encode(tmpbuf, len);
@@ -58,7 +58,7 @@ bool SignPUTv2(HeaderContent *h, const char *path, const S3Credential &cred) {
     return true;
 }
 
-bool SignPOSTv2(HeaderContent *h, const char *path, const S3Credential &cred) {
+bool SignPOSTv2(HeaderContent *h, const char *path_with_query, const S3Credential &cred) {
     char timestr[64];
     //string md5str;
     string typestr;
@@ -72,44 +72,8 @@ bool SignPOSTv2(HeaderContent *h, const char *path, const S3Credential &cred) {
     //md5str = h->Get(CONTENTMD5);
     typestr = h->Get(CONTENTTYPE);
 
-    sstr << "POST\n" << "\n" << typestr << "\n" << timestr << "\n" << path;
+    sstr << "POST\n" << "\n" << typestr << "\n" << timestr << "\n" << path_with_query;
     //printf("%s\n", sstr.str().c_str());
-    char *tmpbuf = sha1hmac(sstr.str().c_str(), cred.secret.c_str());
-    int len = strlen(tmpbuf);
-    char *signature = Base64Encode(tmpbuf, len);
-    sstr.clear();
-    sstr.str("");
-    sstr << "AWS " << cred.keyid << ":" << signature;
-    free(signature);
-    h->Add(AUTHORIZATION, sstr.str().c_str());
-
-    return true;
-}
-
-bool SignLISTv2(HeaderContent *h, const char *path, const S3Credential &cred) {
-    return SignGETv2(h, path, cred);
-}
-
-bool SignFETCHv2(HeaderContent *h, const char *path, const S3Credential &cred) {
-    int len = strlen(path);
-    char path_with_acl[len + 4];
-
-    strncpy(path_with_acl, path, len);
-
-    return SignGETv2(h, strncat(path_with_acl, "?acl", 4), cred);
-}
-
-bool SignDELETEv2(HeaderContent *h, const char *path,
-                  const S3Credential &cred) {
-    char timestr[64];
-
-    // CONTENT_LENGTH is not a part of StringToSign
-    h->Add(CONTENTLENGTH, "0");
-
-    gethttpnow(timestr);
-    h->Add(DATE, timestr);
-    stringstream sstr;
-    sstr << "DELETE\n\n\n" << timestr << "\n" << path;
     char *tmpbuf = sha1hmac(sstr.str().c_str(), cred.secret.c_str());
     int len = strlen(tmpbuf);
     char *signature = Base64Encode(tmpbuf, len);

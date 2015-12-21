@@ -24,10 +24,17 @@ using std::vector;
 
 #include "S3Common.h"
 
-bool PutS3Object(const char *host, const char *bucket, const char *url,
-                 const S3Credential &cred, const char *file);
+const char *GetUploadId(const char *host, const char *bucket,
+                        const char *obj_name, const S3Credential &cred);
 
-bool DeleteS3Object(const char *host, const char *bucket, const char *url,
-                    const S3Credential &cred);
+const char *PartPutS3Object(const char *host, const char *bucket,
+                            const char *obj_name, const S3Credential &cred,
+                            const char *data, uint64_t data_size,
+                            uint64_t part_number, const char *upload_id);
+
+bool CompleteMultiPutS3(const char *host, const char *bucket,
+                        const char *obj_name, const char *upload_id,
+                        const char **etag_array, uint64_t count,
+                        const S3Credential &cred);
 
 #endif
