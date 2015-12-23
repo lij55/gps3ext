@@ -19,8 +19,8 @@ using std::string;
 using std::stringstream;
 
 struct MemoryData {
-    char *data;
-    size_t size;
+    char *advance;
+    size_t sizeleft;
 };
 
 static size_t mem_read_callback(void *ptr, size_t size, size_t nmemb,
@@ -30,11 +30,12 @@ static size_t mem_read_callback(void *ptr, size_t size, size_t nmemb,
 
     if (count < 1) return 0;
 
-    while (count && puppet->size) {
-        *(char *)ptr = puppet->data[0]; /* copy one single byte */
+    // read as much as it can
+    while (count && puppet->sizeleft) {
+        *(char *)ptr = puppet->advance[0]; /* copy one single byte */
 
-        puppet->data++; /* advance pointer */
-        puppet->size--; /* less data left */
+        puppet->advance++;  /* advance pointer */
+        puppet->sizeleft--; /* less data left */
 
         count--;
     }
@@ -48,17 +49,17 @@ static size_t header_write_callback(void *contents, size_t size, size_t nmemb,
     size_t realsize = size * nmemb;
     struct MemoryData *puppet = (struct MemoryData *)userp;
 
-    puppet->data = (char *)realloc(puppet->data, puppet->size + realsize + 1);
-    if (puppet->data == NULL) {
-        /* out of memory! */
-        printf("not enough memory (realloc returned NULL)\n");
-        // returning 0 as error is the standard behavior of fwrite()
+    if (!puppet->advance) return 0;
+
+    // write all or fail
+    if (realsize > puppet->sizeleft) {
+        printf("not enough memory in header_data\n");
         return 0;
     }
 
-    memcpy(&(puppet->data[puppet->size]), contents, realsize);
-    puppet->size += realsize;
-    puppet->data[puppet->size] = 0;
+    memcpy(puppet->advance, contents, realsize);
+    puppet->advance += realsize;
+    puppet->sizeleft -= realsize;
 
     return realsize;
 }
@@ -98,6 +99,8 @@ const char *GetUploadId(const char *host, const char *bucket,
 
     HeaderContent *header = new HeaderContent();
     header->Add(HOST, host);
+    // XXX workaround
+    header->Add(CONTENTTYPE, "application/x-www-form-urlencoded");
     UrlParser p(url.str().c_str());
     path_with_query << p.Path() << "?uploads";
     SignPOSTv2(header, path_with_query.str().c_str(), cred);
@@ -166,8 +169,17 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     std::stringstream path_with_query;
     XMLInfo xml;
     xml.ctxt = NULL;
+
+    char *header_buf = (char *)malloc(4 * 1024);
+    if (!header_buf) {
+        printf("failed to malloc header_buf\n");
+        return NULL;
+    } else {
+        memset(header_buf, 0, 4 * 1024);
+    }
+
+    struct MemoryData header_data = {header_buf, 4 * 1024};
     struct MemoryData read_data = {(char *)data, data_size};
-    struct MemoryData header_data = {(char *)malloc(1), 0};
 
     if (!host || !bucket || !obj_name) return NULL;
 
@@ -216,7 +228,7 @@ const char *PartPutS3Object(const char *host, const char *bucket,
         // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
 
-        curl_easy_setopt(curl, CURLOPT_HEADERDATA, header_data);
+        curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void *)&header_data);
         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_write_callback);
 
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&xml);
@@ -244,21 +256,23 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     // Server: AmazonS3
 
     std::ostringstream out;
-    out << header_data.data;
+    out << header_buf;
+
+    std::cout << header_buf << std::endl;
 
     // TODO general header content extracting func
     uint64_t etag_start_pos = out.str().find("ETag: ") + 6;
     std::string etag_to_end = out.str().substr(etag_start_pos);
     // RFC 2616 states "HTTP/1.1 defines the sequence CR LF as the end-of-line
     // marker for all protocol elements except the entity-body"
-    uint64_t etag_len = etag_to_end.find("\r") - 1;
+    uint64_t etag_len = etag_to_end.find("\r");
 
     const char *etag = etag_to_end.substr(0, etag_len).c_str();
 
     if (etag) {
         curl_slist_free_all(chunk);
         curl_easy_cleanup(curl);
-        return etag;
+        return strdup(etag);
     }
 
     // <Error>
@@ -294,6 +308,7 @@ const char *PartPutS3Object(const char *host, const char *bucket,
 
     curl_slist_free_all(chunk);
     curl_easy_cleanup(curl);
+    free(header_buf);
 
     return NULL;
 }
@@ -303,14 +318,25 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
                         const char **etag_array, uint64_t count,
                         const S3Credential &cred) {
     std::stringstream url;
-    std::stringstream query;
     std::stringstream path_with_query;
     XMLInfo xml;
     xml.ctxt = NULL;
 
-    if (!host || !bucket || !obj_name) return NULL;
+    char *header_buf = (char *)malloc(4 * 1024);
+    if (!header_buf) {
+        printf("failed to malloc header_buf\n");
+        return false;
+    } else {
+        memset(header_buf, 0, 4 * 1024);
+    }
+
+    struct MemoryData header_data = {header_buf, 4 * 1024};
+
+    if (!host || !bucket || !obj_name) return false;
 
     url << "http://" << host << "/" << bucket << "/" << obj_name;
+
+    url << "?uploadId=" << upload_id;
 
     // POST
     // /example-object?uploadId=AAAsb2FkIElEIGZvciBlbHZpbmcncyWeeS1tb3ZpZS5tMnRzIRRwbG9hZA
@@ -336,23 +362,26 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     // </CompleteMultipartUpload>
     std::stringstream body;
 
-    body << "<CompleteMultipartUpload>";
-    for (int i = 0; i < count; ++i) {
-        body << "<Part><PartNumber>" << i << "</PartNumber><ETag>"
-             << etag_array[i] << "</ETag></Part>";
+    body << "<CompleteMultipartUpload>\n";
+    for (uint64_t i = 0; i < count; ++i) {
+        body << "  <Part>\n    <PartNumber>" << i + 1
+             << "</PartNumber>\n    <ETag>" << etag_array[i]
+             << "</ETag>\n  </Part>\n";
     }
-    body << "</CompleteMultipartUpload>\n";
+    body << "</CompleteMultipartUpload>";
 
-    const char *data = body.str().c_str();
-    uint64_t data_size = strlen(body.str().c_str());
+    std::cout << body.str().c_str() << std::endl;
+
+    struct MemoryData read_data = {(char *)body.str().c_str(),
+                                   strlen(body.str().c_str())};
 
     HeaderContent *header = new HeaderContent();
     header->Add(HOST, host);
+    // XXX workaround
+    header->Add(CONTENTTYPE, "application/xml");
     UrlParser p(url.str().c_str());
     path_with_query << p.Path() << "?uploadId=" << upload_id;
     SignPOSTv2(header, path_with_query.str().c_str(), cred);
-
-    query << "uploadId=" << upload_id;
 
     CURL *curl = curl_easy_init();
     if (curl) {
@@ -364,19 +393,20 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
         curl_easy_setopt(curl, CURLOPT_READFUNCTION, mem_read_callback);
 
         /* now specify which file/data to upload */
-        curl_easy_setopt(curl, CURLOPT_READDATA, data);
+        curl_easy_setopt(curl, CURLOPT_READDATA, (void *)&read_data);
 
         /* provide the size of the upload, we specicially typecast the value
            to curl_off_t since we must be sure to use the correct data size */
-        curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)data_size);
+        curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE,
+                         (curl_off_t)read_data.sizeleft);
 
         // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
 
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, query.str().c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE,
-                         (long)strlen(query.str().c_str()));
+
+        curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void *)&header_data);
+        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_write_callback);
 
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&xml);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ParserCallback);
@@ -391,6 +421,8 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     if (res != CURLE_OK)
         fprintf(stderr, "curl_easy_perform() failed: %s\n",
                 curl_easy_strerror(res));
+
+    std::cout << header_buf << std::endl;
 
     // HTTP/1.1 200 OK
     // x-amz-id-2: Uuag1LuByRx9e6j5Onimru9pO4ZVKnJ2Qz7/C1NPcfTWAtRPfTaOFg==
@@ -421,7 +453,7 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     }
 
     xmlNode *root_element = xmlDocGetRootElement(xml.ctxt->myDoc);
-    if (!root_element) return NULL;
+    if (!root_element) return false;
 
     char *response_code = NULL;
     xmlNodePtr cur = root_element->xmlChildrenNode;
@@ -438,9 +470,9 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
         std::cout << response_code << std::endl;
     }
 
-
     curl_slist_free_all(chunk);
     curl_easy_cleanup(curl);
+    free(header_buf);
 
     if (response_code) {
         return false;
