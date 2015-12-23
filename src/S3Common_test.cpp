@@ -13,6 +13,21 @@ TEST(S3Common, UrlParser) {
     }
 }
 
+TEST(S3Common, UrlParser_LongURL) {
+    UrlParser* p = new UrlParser(
+        "http://s3-us-west-2.amazonaws.com/metro.pivotal.io/test/"
+        "data1234?partNumber=1&uploadId=."
+        "CXn7YDXxGo7aDLxEyX5wxaDivCw5ACWfaMQts8_4M6."
+        "NbGeeaI1ikYlO5zWZOpclVclZRAq5758oCxk_DtiX5BoyiMr7Ym6TKiEqqmNpsE-");
+    EXPECT_NE(p, (void*)NULL);
+    if (p) {
+        EXPECT_STREQ(p->Schema(), "http");
+        EXPECT_STREQ(p->Host(), "s3-us-west-2.amazonaws.com");
+        EXPECT_STREQ(p->Path(), "/metro.pivotal.io/test/data1234");
+        delete p;
+    }
+}
+
 #define HOSTSTR "www.google.com"
 #define RANGESTR "1-10000"
 #define MD5STR "xxxxxxxxxxxxxxxxxxx"
