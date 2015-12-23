@@ -5,6 +5,9 @@
 #include <cstdlib>
 #include <cstdint>
 #include <cstring>
+#include <cstdarg>
+
+#include "S3Log.h"
 
 bool gethttpnow(char datebuf[65]);
 
@@ -26,8 +29,8 @@ bool sha256hmac(char* str, char out[65], char* secret);
 char* SignatureV2(const char* date, const char* path, const char* key);
 char* SignatureV4(const char* date, const char* path, const char* key);
 
-void InitLog();
-void EXTLOG(const char* fmt, ...);
+//extern uint8_t _LOGLEVEL;
+
 
 #include <string>
 using std::string;

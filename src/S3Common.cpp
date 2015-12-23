@@ -151,7 +151,7 @@ UrlParser::UrlParser(const char *url) {
     sprintf(this->fullurl, "%s", url);
     result = http_parser_parse_url(this->fullurl, len, false, &u);
     if (result != 0) {
-        EXTLOG("Parse error : %d\n", result);
+        EXTLOG(EXT_ERROR, "Parse error : %d\n", result);
         return;
     }
     // std::cout<<u.field_set<<std::endl;

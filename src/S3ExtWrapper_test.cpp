@@ -41,7 +41,7 @@ bool S3Reader_fake::Init(int segid, int segnum, int chunksize) {
 
     // Validate url first
     if (!this->ValidateURL()) {
-        EXTLOG("validate url fail %s\n", this->url.c_str());
+        EXTLOG(EXT_ERROR,"validate url fail %s\n", this->url.c_str());
     }
 
     // TODO: As separated function for generating url
@@ -89,8 +89,6 @@ void ExtWrapperTest(const char *url, uint64_t buffer_size,
     char *buf = (char *)malloc(buffer_size);
 
     ASSERT_NE((void *)NULL, buf);
-
-    InitLog();
 
     if (strncmp(url, "http://localhost/", 17) == 0) {
         myData = new S3Reader_fake(url);

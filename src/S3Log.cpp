@@ -14,6 +14,9 @@
 #include "cpplog.hpp"
 using cpplog::StdErrLogger;
 
+#include "S3Log.h"
+#include "utils.h"
+
 class CustomLogMessage : public cpplog::LogMessage
 {
 public:
@@ -121,74 +124,10 @@ public:
 	}
 };
 
-void* runlocaludpserver ( void* unusedn) {
-    int sockfd;
-    int portno = 1111;
-    
-    struct sockaddr_in serveraddr; /* server's addr */
-
-    struct hostent *hostp; /* client host info */
-    char buf[1024]; /* message buf */
-    char *hostaddrp; /* dotted decimal host addr string */
-    int optval; /* flag value for setsockopt */
-    int n; /* message byte size */
-
-    /* 
-     * socket: create the parent socket 
-     */
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockfd < 0) {
-        perror("ERROR opening socket");
-        return NULL;
-    }
-
-    /* setsockopt: Handy debugging trick that lets 
-     * us rerun the server immediately after we kill it; 
-     * otherwise we have to wait about 20 secs. 
-     * Eliminates "ERROR on binding: Address already in use" error. 
-     */
-    optval = 1;
-    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, 
-               (const void *)&optval , sizeof(int));
-
-    /*
-     * build the server's Internet address
-     */
-    bzero((char *) &serveraddr, sizeof(serveraddr));
-    serveraddr.sin_family = AF_INET;
-    serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serveraddr.sin_port = htons((unsigned short)portno);
-
-    /* 
-     * bind: associate the parent socket with a port 
-     */
-    if (bind(sockfd, (struct sockaddr *) &serveraddr, 
-             sizeof(serveraddr)) < 0)  {
-        perror("ERROR on binding");
-        return NULL;
-    }
-    printf("in udp server\n");
-    while (1) {
-        /*
-         * recvfrom: receive a UDP datagram from a client
-         */
-        bzero(buf, 1024);
-        n = recvfrom(sockfd, buf, 1024, 0, NULL, NULL);
-        if (n < 0) {
-            perror("ERROR in recvfrom");
-            return NULL;
-        }
-        if( n == 0 )
-            break;
-        printf("server received %d/%d bytes: %s\n", strlen(buf), n, buf);
-    }
-}
 
 class UDPLogger : public cpplog::OstreamLogger {
 private:
 	UDPStream m_out;
-    bool m_runserver;
-    pthread_t m_thread;
 public:
 	UDPLogger(std::string host, unsigned short port);
     ~UDPLogger();
@@ -196,34 +135,115 @@ public:
 
 UDPLogger::UDPLogger(std::string host, unsigned short port) 
 	: OstreamLogger(m_out)
-    , m_runserver(true)
 {
 	m_out.open(host, port);
-    if(m_runserver) {
-        pthread_create(&this->m_thread, NULL, runlocaludpserver, NULL);
-    }
 }
 
 UDPLogger::~UDPLogger() {
-    if(m_runserver) {
-        
-        pthread_join(m_thread, NULL);
-    }
- }
-
-UDPLogger& GetDefaultLogger() {
-    static UDPLogger log("127.0.0.1", 1111);
-    return log;
 }
 
-
-int main () 
+using cpplog::LogData;
+class BackgroundLogger : public cpplog::BaseLogger
 {
-    LOG_DEBUG(GetDefaultLogger()) << "debug message 1" << std::endl;
-    LOG_WARN(GetDefaultLogger()) << "Log message here" << std::endl;
-    LOG_DEBUG(GetDefaultLogger()) << "debug message 2" << std::endl;
-    CHECK_EQUAL(GetDefaultLogger(), 1,  2) << "Some other message" << std::endl;
-    LOG_DEBUG(GetDefaultLogger()) << "debug message 3" << std::endl;
-    CHECK_STREQ(GetDefaultLogger(), "a", "a") << "Strings should be equal" << std::endl;
-    LOG_DEBUG(GetDefaultLogger()) << "debug message 4" << std::endl;
+private:
+	BaseLogger*                 m_forwardTo;
+	concurrent_queue<cpplog::LogData*>  m_queue;
+
+	std::thread               m_backgroundThread;
+	LogData*                    m_dummyItem;
+
+	void backgroundFunction()
+	{
+		LogData* nextLogEntry;
+		bool deleteMessage = true;
+		
+		do
+            {
+                m_queue.deQ(nextLogEntry);
+				
+                if( nextLogEntry != m_dummyItem )
+                    deleteMessage = m_forwardTo->sendLogMessage(nextLogEntry);
+
+                if( deleteMessage )
+                    delete nextLogEntry;
+            } while( nextLogEntry != m_dummyItem );
+        }
+
+	void Init()
+	{
+		m_dummyItem = new LogData(LL_TRACE);
+		
+		m_backgroundThread = std::thread(std::bind(&BackgroundLogger::backgroundFunction, this));
+	}
+
+public:
+	BackgroundLogger(BaseLogger* forwardTo)
+		: m_forwardTo(forwardTo)
+	{
+		Init();
+	}
+	
+	BackgroundLogger(BaseLogger& forwardTo)
+		: m_forwardTo(&forwardTo)
+	{
+		Init();
+	}
+	
+	void Stop()
+	{
+		m_queue.enQ(m_dummyItem);
+
+		m_backgroundThread.join();
+	}
+	
+	~BackgroundLogger()
+	{
+		Stop();
+	}
+
+	virtual bool sendLogMessage(LogData* logData)
+	{
+		m_queue.enQ(logData);
+		
+		// Don't delete - the background thread should handle this.
+		return false;
+	}
+	
+};
+
+// requrei c++11
+cpplog::BaseLogger& GetDefaultLogger() {
+#if 0
+	static StdErrLogger   errlog;
+	static BackgroundLogger log(&errlog);
+#else
+	static UDPLogger log("127.0.0.1", 1111);
+#endif
+	return log;
 }
+
+void EXTLOG(uint8_t level, const char* fmt, ...) {
+	static char buf[1024];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, 1023, fmt, args);
+    va_end(args);
+
+	switch(level) {
+	case EXT_FATAL:
+	case EXT_ERROR:
+		S3ERROR<<buf<<std::endl;
+		break;
+	case EXT_WARNING:
+		S3WARN<<buf<<std::endl;
+		break;
+	case EXT_INFO:
+		S3INFO<<buf<<std::endl;
+		break;
+	case EXT_DEBUG:
+	default:
+		S3DEBUG<<buf<<std::endl;
+		break;
+	}
+}
+

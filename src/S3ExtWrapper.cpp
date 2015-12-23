@@ -42,13 +42,13 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
 
     // Validate url first
     if (!this->ValidateURL()) {
-        EXTLOG("validate url fail %s\n", this->url.c_str());
+        EXTLOG(EXT_ERROR, "validate url fail %s\n", this->url.c_str());
     }
 
     // TODO: As separated function for generating url
     stringstream sstr;
     sstr << "s3-" << this->region << ".amazonaws.com";
-    EXTLOG("%s\n", sstr.str().c_str());
+    EXTLOG(EXT_DEBUG, "%s\n", sstr.str().c_str());
 
     this->keylist = ListBucket(sstr.str().c_str(), this->bucket.c_str(),
                                this->prefix.c_str(), this->cred);
@@ -63,7 +63,7 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
 }
 
 void S3Reader::getNextDownloader() {
-    EXTLOG("download next file, contentindex = %d\n", this->contentindex);
+    EXTLOG(EXT_DEBUG, "download next file, contentindex = %d\n", this->contentindex);
 
     if (this->filedownloader) {  // reset old downloader
         filedownloader->destroy();
@@ -77,7 +77,7 @@ void S3Reader::getNextDownloader() {
     this->filedownloader = new Downloader(this->concurrent_num);
 
     if (!this->filedownloader) {
-        EXTLOG("Create filedownloader fail");
+        EXTLOG(EXT_ERROR, "Create filedownloader fail");
         return;
     }
     BucketContent *c = this->keylist->contents[this->contentindex];
@@ -113,7 +113,7 @@ RETRY:
     // EXTLOG("getlen is %d\n", len);
     bool result = filedownloader->get(data, buflen);
     if (!result) {  // read fail
-        EXTLOG("get data from filedownloader fail\n");
+        EXTLOG(EXT_ERROR, "get data from filedownloader fail\n");
         return false;
     }
     // EXTLOG("getlen is %lld\n", buflen);
@@ -121,7 +121,7 @@ RETRY:
         // change to next downloader
         this->getNextDownloader();
         if (this->filedownloader) {  // download next file
-            EXTLOG("retry\n");
+            EXTLOG(EXT_INFO, "retry\n");
             goto RETRY;
         }
     }

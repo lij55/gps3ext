@@ -89,7 +89,6 @@ TEST(ListBucket, s3) {
 void DownloadTest(const char *url, uint64_t file_size, const char *md5_str,
                   uint8_t thread_num, uint64_t chunk_size, uint64_t buffer_size,
                   bool use_credential) {
-    InitLog();
     S3Credential g_cred = {KEYID, SECRET};
 
     uint64_t buf_len = buffer_size;

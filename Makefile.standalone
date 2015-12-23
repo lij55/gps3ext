@@ -6,7 +6,7 @@ INCLUDES = -Isrc -Ilib -I/usr/include/libxml2
 LDFLAGS = -lpthread -lcrypto -lcurl -lxml2 -lgcov
 
 sources = src/S3Downloader.cpp src/utils.cpp lib/http_parser.cpp src/standalone.cpp src/S3Common.cpp src/S3Uploader.cpp src/S3Operations.cpp
-testcources = src/utils_test.cpp src/S3Downloader_test.cpp lib/http_parser.cpp src/S3Common_test.cpp src/S3ExtWrapper_test.cpp src/S3Operations_test.cpp
+testcources = src/utils_test.cpp src/S3Downloader_test.cpp lib/http_parser.cpp src/S3Common_test.cpp src/S3ExtWrapper_test.cpp src/S3Operations_test.cpp src/S3Log_test.cpp
 
 objects = $(sources:.cpp=.o)
 testobjs = $(testcources:.cpp=.o)

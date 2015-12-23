@@ -206,32 +206,6 @@ benefit from the failure function.
     */
 }
 
-static int logsock = -1;
-static struct sockaddr_in si_logserver;
-
-void InitLog() {
-    if (logsock == -1) {
-        si_logserver.sin_family = AF_INET;
-        si_logserver.sin_port = htons(1111);
-        if (inet_aton("127.0.0.1", &si_logserver.sin_addr) == 0) {  // error
-            // log error here
-            return;
-        }
-        logsock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    }
-}
-
-void EXTLOG(const char *fmt, ...) {
-    char buf[1024];
-    va_list args;
-    va_start(args, fmt);
-    vsnprintf(buf, 1023, fmt, args);
-    va_end(args);
-    buf[1023] = 0;
-    sendto(logsock, buf, strlen(buf), 0, (struct sockaddr *)&si_logserver,
-           sizeof(sockaddr_in));
-}
-
 MD5Calc::MD5Calc() {
     memset(this->md5, 0, 17);
     MD5_Init(&this->c);
