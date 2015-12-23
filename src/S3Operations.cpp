@@ -132,6 +132,10 @@ const char *GetUploadId(const char *host, const char *bucket,
     curl_slist_free_all(chunk);
     curl_easy_cleanup(curl);
 
+    if (!xml.ctxt) {
+        printf("xmlParseChunk failed\n");
+        return NULL;
+    }
     xmlNode *root_element = xmlDocGetRootElement(xml.ctxt->myDoc);
     if (!root_element) return NULL;
 
@@ -264,6 +268,10 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     //   <HostId>Uuag1LuByRx9e6j5Onimru9pO4ZVKnJ2Qz7/C1NPcfTWAtRPfTaOFg==</HostId>
     // </Error>
     xmlParseChunk(xml.ctxt, "", 0, 1);
+    if (!xml.ctxt) {
+        printf("xmlParseChunk failed\n");
+        return NULL;
+    }
     xmlNode *root_element = xmlDocGetRootElement(xml.ctxt->myDoc);
     if (!root_element) return NULL;
 
@@ -407,6 +415,11 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     //   <HostId>Uuag1LuByRx9e6j5Onimru9pO4ZVKnJ2Qz7/C1NPcfTWAtRPfTaOFg==</HostId>
     // </Error>
     xmlParseChunk(xml.ctxt, "", 0, 1);
+    if (!xml.ctxt) {
+        printf("xmlParseChunk failed\n");
+        return false;
+    }
+
     xmlNode *root_element = xmlDocGetRootElement(xml.ctxt->myDoc);
     if (!root_element) return NULL;
 

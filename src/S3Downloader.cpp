@@ -525,6 +525,10 @@ ListBucketResult *ListBucket_FakeHTTP(const char *host, const char *bucket) {
         return NULL;
     }
     xmlParseChunk(xml.ctxt, "", 0, 1);
+    if (!xml.ctxt) {
+        printf("xmlParseChunk failed\n");
+        return NULL;
+    }
 
     xmlNode *root_element = xmlDocGetRootElement(xml.ctxt->myDoc);
     if (!root_element) return NULL;
