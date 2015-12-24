@@ -13,7 +13,8 @@
 
 using std::stringstream;
 
-bool SignGETv2(HeaderContent *h, const char *path_with_query, const S3Credential &cred) {
+bool SignGETv2(HeaderContent *h, const char *path_with_query,
+               const S3Credential &cred) {
     char timestr[64];
 
     // CONTENT_LENGTH is not a part of StringToSign
@@ -35,7 +36,8 @@ bool SignGETv2(HeaderContent *h, const char *path_with_query, const S3Credential
     return true;
 }
 
-bool SignPUTv2(HeaderContent *h, const char *path_with_query, const S3Credential &cred) {
+bool SignPUTv2(HeaderContent *h, const char *path_with_query,
+               const S3Credential &cred) {
     char timestr[64];
     string typestr;
 
@@ -58,22 +60,28 @@ bool SignPUTv2(HeaderContent *h, const char *path_with_query, const S3Credential
     return true;
 }
 
-bool SignPOSTv2(HeaderContent *h, const char *path_with_query, const S3Credential &cred) {
+bool SignPOSTv2(HeaderContent *h, const char *path_with_query,
+                const S3Credential &cred) {
     char timestr[64];
-    //string md5str;
-    string typestr;
+    // string md5str;
 
     gethttpnow(timestr);
     h->Add(DATE, timestr);
     // XXX remove this workaround
     // https://en.wikipedia.org/wiki/Percent-encoding
-    h->Add(CONTENTTYPE, "application/x-www-form-urlencoded");
+    // h->Add(CONTENTTYPE, "application/x-www-form-urlencoded");
     stringstream sstr;
-    //md5str = h->Get(CONTENTMD5);
-    typestr = h->Get(CONTENTTYPE);
+    // md5str = h->Get(CONTENTMD5);
+    const char *typestr = h->Get(CONTENTTYPE);
 
-    sstr << "POST\n" << "\n" << typestr << "\n" << timestr << "\n" << path_with_query;
-    //printf("%s\n", sstr.str().c_str());
+    if (typestr != NULL) {
+        sstr << "POST\n"
+             << "\n" << typestr << "\n" << timestr << "\n" << path_with_query;
+    } else {
+        sstr << "POST\n"
+             << "\n" << "\n" << timestr << "\n" << path_with_query;
+    }
+    printf("%s\n", sstr.str().c_str());
     char *tmpbuf = sha1hmac(sstr.str().c_str(), cred.secret.c_str());
     int len = strlen(tmpbuf);
     char *signature = Base64Encode(tmpbuf, len);
@@ -144,27 +152,41 @@ UrlParser::UrlParser(const char *url) {
         // throw exception
         return;
     }
+
+    this->schema = NULL;
+    this->host = NULL;
+    this->path = NULL;
+
     struct http_parser_url u;
     int len, result;
     len = strlen(url);
     this->fullurl = (char *)malloc(len + 1);
+    if (!this->fullurl) return;
+
+    memset(this->fullurl, 0, len + 1);
     sprintf(this->fullurl, "%s", url);
     result = http_parser_parse_url(this->fullurl, len, false, &u);
     if (result != 0) {
-        EXTLOG("Parse error : %d\n", result);
+        EXTLOG(EXT_ERROR, "Parse error : %d\n", result);
         return;
     }
+
     // std::cout<<u.field_set<<std::endl;
-    this->host = extract_field(&u, UF_HOST);
     this->schema = extract_field(&u, UF_SCHEMA);
+    this->host = extract_field(&u, UF_HOST);
     this->path = extract_field(&u, UF_PATH);
 }
 
 UrlParser::~UrlParser() {
-    if (host) free(host);
-    if (schema) free(schema);
-    if (path) free(path);
-    if (fullurl) free(fullurl);
+    if (this->schema) free(this->schema);
+    if (this->host) free(this->host);
+    if (this->path) free(this->path);
+    if (this->fullurl) free(this->fullurl);
+
+    this->schema = NULL;
+    this->host = NULL;
+    this->path = NULL;
+    this->fullurl = NULL;
 }
 
 char *UrlParser::extract_field(const struct http_parser_url *u,
@@ -182,7 +204,7 @@ char *UrlParser::extract_field(const struct http_parser_url *u,
 }
 
 uint64_t ParserCallback(void *contents, uint64_t size, uint64_t nmemb,
-                               void *userp) {
+                        void *userp) {
     uint64_t realsize = size * nmemb;
     int res;
     // printf("%.*s",realsize, (char*)contents);
