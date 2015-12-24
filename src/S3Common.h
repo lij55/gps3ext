@@ -10,8 +10,6 @@ using std::string;
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
-#include "utils.h"
-
 struct S3Credential {
     string keyid;
     string secret;
@@ -43,15 +41,11 @@ class HeaderContent {
     std::map<HeaderField, string> fields;
 };
 
-bool SignGETv2(HeaderContent* h, const char* path_with_query,
-               const S3Credential& cred);
-Config& GetGlobalS3Config();
+bool SignGETv2(HeaderContent* h, const char* path_with_query, const S3Credential& cred);
 
-bool SignPUTv2(HeaderContent* h, const char* path_with_query,
-               const S3Credential& cred);
+bool SignPUTv2(HeaderContent* h, const char* path_with_query, const S3Credential& cred);
 
-bool SignPOSTv2(HeaderContent* h, const char* path_with_query,
-                const S3Credential& cred);
+bool SignPOSTv2(HeaderContent* h, const char* path_with_query, const S3Credential& cred);
 
 class UrlParser {
    public:
@@ -60,7 +54,6 @@ class UrlParser {
     const char* Schema() { return this->schema; };
     const char* Host() { return this->host; };
     const char* Path() { return this->path; };
-
     /* data */
    private:
     char* extract_field(const struct http_parser_url* u,
@@ -78,7 +71,7 @@ struct XMLInfo {
     xmlParserCtxtPtr ctxt;
 };
 
-uint64_t ParserCallback(void* contents, uint64_t size, uint64_t nmemb,
-                        void* userp);
+uint64_t ParserCallback(void *contents, uint64_t size, uint64_t nmemb,
+                               void *userp);
 
 #endif  // __S3_COMMON_H__

@@ -5,11 +5,7 @@
 #include <cstdlib>
 #include <cstdint>
 #include <cstring>
-#include <cstdarg>
 
-#include "S3Log.h"
-
-#include "ini.h"
 bool gethttpnow(char datebuf[65]);
 
 bool lowercase(char* out, const char* in);
@@ -29,6 +25,9 @@ bool sha256hmac(char* str, char out[65], char* secret);
 // return malloced because Base64Encode
 char* SignatureV2(const char* date, const char* path, const char* key);
 char* SignatureV4(const char* date, const char* path, const char* key);
+
+void InitLog();
+void EXTLOG(const char* fmt, ...);
 
 #include <string>
 using std::string;
@@ -108,15 +107,6 @@ private:
     uint64_t length;
     // uint64_t offset;
     char* data;
-};
-
-class Config {
-public:
-    Config(const char* filename);
-    ~Config();
-    const char* Get(const char* sec, const char* key, const char* defaultvalue);
-private:
-    ini_t *_conf;
 };
 
 
