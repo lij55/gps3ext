@@ -3,32 +3,35 @@
 #define _CONCURRENT_QUEUE_H
 
 #include <queue>
-#include <boost/thread.hpp>
+#include <thread>
+#include  <mutex>
+#include <condition_variable>
+
 
 template<typename Data>
 class concurrent_queue
 {
 private:
     std::queue<Data> the_queue;
-    mutable boost::mutex the_mutex;
-    boost::condition_variable the_condition_variable;
+    mutable std::mutex the_mutex;
+    std::condition_variable the_condition_variable;
 public:
     void push(Data const& data)
-    {
-        boost::lock_guard<boost::mutex> lock(the_mutex);
+   { 
+        std::lock_guard<std::mutex> lock(the_mutex);
         the_queue.push(data);
         the_condition_variable.notify_one();
     }
 
     bool empty() const
     {
-        boost::lock_guard<boost::mutex> lock(the_mutex);
+        std::lock_guard<std::mutex> lock(the_mutex);
         return the_queue.empty();
     }
 
     bool try_pop(Data& popped_value)
     {
-        boost::unique_lock<boost::mutex> lock(the_mutex);
+        std::unique_lock<std::mutex> lock(the_mutex);
         if( the_queue.empty() )
         {
             return false;
@@ -41,7 +44,7 @@ public:
 
     void wait_and_pop(Data& popped_value)
     {
-        boost::unique_lock<boost::mutex> lock(the_mutex);
+        std::unique_lock<std::mutex> lock(the_mutex);
 
         while( the_queue.empty() )
         {

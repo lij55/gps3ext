@@ -60,3 +60,15 @@ TEST(S3Common, HeaderContent) {
     }
     if (h) delete h;
 }
+
+TEST(S3Common, Config) {
+    auto c = GetGlobalS3Config();
+    // EXPECT_STREQ(c.Get("logserver", "server", "") ,"127.0.0.1");
+    // EXPECT_STREQ(c.Get("logserver", "serverxx", "tttt") ,"tttt");
+    EXPECT_STREQ(c.Get("testbucket", "accesskey", "tttt") ,"testaccesskey");
+    EXPECT_STREQ(c.Get("testbucket", "accesskeyaa", "tttt") ,"tttt");
+    EXPECT_STREQ(c.Get("testbucket", "secret", "tttt") ,"testsecret");
+    EXPECT_STREQ(c.Get("testbucket", "secretaa", "tttt") ,"tttt");
+    EXPECT_STREQ(c.Get("testbucket", "token", "tttt") ,"testtoken");
+    EXPECT_STREQ(c.Get("testbucket", "tokenaa", "tttt") ,"tttt");
+}

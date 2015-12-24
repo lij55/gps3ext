@@ -250,3 +250,26 @@ uint64_t DataBuffer::append(const char* buf, uint64_t len) {
     this->length += copylen;
     return copylen;
 }
+
+
+Config::Config(const char* filename)
+    : _conf(NULL) {
+    if(filename)
+        this->_conf = ini_load(filename);
+}
+
+Config::~Config() {
+    if(this->_conf)
+        ini_free(this->_conf);
+}
+
+const char* Config::Get(const char* sec, const char* key, const char* defaultvalue) {
+    const char* ret = defaultvalue;
+    if(this->_conf) {
+        const char* tmp = ini_get(this->_conf, sec, key);
+        if(tmp)
+            ret = tmp;
+    }
+    return ret;
+}
+

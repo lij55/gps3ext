@@ -13,6 +13,13 @@
 
 using std::stringstream;
 
+Config& GetGlobalS3Config() {
+    static Config s3cfg("s3config.ini");
+    return s3cfg;
+}
+
+
+
 bool SignGETv2(HeaderContent *h, const char *path_with_query,
                const S3Credential &cred) {
     char timestr[64];

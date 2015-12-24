@@ -10,6 +10,8 @@ using std::string;
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
+#include "utils.h"
+
 struct S3Credential {
     string keyid;
     string secret;
@@ -43,6 +45,7 @@ class HeaderContent {
 
 bool SignGETv2(HeaderContent* h, const char* path_with_query,
                const S3Credential& cred);
+Config& GetGlobalS3Config();
 
 bool SignPUTv2(HeaderContent* h, const char* path_with_query,
                const S3Credential& cred);
