@@ -352,7 +352,7 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     std::ostringstream out;
     out << header_buf;
 
-    std::cout << header_buf << std::endl;
+    //std::cout << header_buf << std::endl;
 
     // TODO general header content extracting func
     uint64_t etag_start_pos = out.str().find("ETag: ") + 6;
@@ -464,7 +464,7 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     }
     body << "</CompleteMultipartUpload>";
 
-    std::cout << body.str().c_str() << std::endl;
+    //std::cout << body.str().c_str() << std::endl;
 
     struct MemoryData read_data = {(char *)body.str().c_str(),
                                    strlen(body.str().c_str())};
@@ -529,7 +529,7 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
         fprintf(stderr, "curl_easy_perform() failed: %s\n",
                 curl_easy_strerror(res));
 
-    std::cout << header_buf << std::endl;
+    //std::cout << header_buf << std::endl;
 
     // HTTP/1.1 200 OK
     // x-amz-id-2: Uuag1LuByRx9e6j5Onimru9pO4ZVKnJ2Qz7/C1NPcfTWAtRPfTaOFg==
