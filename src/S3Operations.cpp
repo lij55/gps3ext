@@ -18,6 +18,96 @@
 using std::string;
 using std::stringstream;
 
+#ifdef DEBUG_CURL
+struct data {
+    char trace_ascii; /* 1 or 0 */
+};
+
+static void dump(const char *text, FILE *stream, unsigned char *ptr,
+                 size_t size, char nohex) {
+    size_t i;
+    size_t c;
+
+    unsigned int width = 0x10;
+
+    if (nohex) /* without the hex output, we can fit more on screen */
+        width = 0x40;
+
+    fprintf(stream, "%s, %10.10ld bytes (0x%8.8lx)\n", text, (long)size,
+            (long)size);
+
+    for (i = 0; i < size; i += width) {
+        fprintf(stream, "%4.4lx: ", (long)i);
+
+        if (!nohex) {
+            /* hex not disabled, show it */
+            for (c = 0; c < width; c++)
+                if (i + c < size)
+                    fprintf(stream, "%02x ", ptr[i + c]);
+                else
+                    fputs("   ", stream);
+        }
+
+        for (c = 0; (c < width) && (i + c < size); c++) {
+            /* check for 0D0A; if found, skip past and start a new line of
+             * output */
+            if (nohex && (i + c + 1 < size) && ptr[i + c] == 0x0D &&
+                ptr[i + c + 1] == 0x0A) {
+                i += (c + 2 - width);
+                break;
+            }
+            fprintf(stream, "%c", (ptr[i + c] >= 0x20) && (ptr[i + c] < 0x80)
+                                      ? ptr[i + c]
+                                      : '.');
+            /* check again for 0D0A, to avoid an extra \n if it's at width */
+            if (nohex && (i + c + 2 < size) && ptr[i + c + 1] == 0x0D &&
+                ptr[i + c + 2] == 0x0A) {
+                i += (c + 3 - width);
+                break;
+            }
+        }
+        fputc('\n', stream); /* newline */
+    }
+    fflush(stream);
+}
+
+static int my_trace(CURL *handle, curl_infotype type, char *data, size_t size,
+                    void *userp) {
+    struct data *config = (struct data *)userp;
+    const char *text;
+    (void)handle; /* prevent compiler warning */
+
+    switch (type) {
+        case CURLINFO_TEXT:
+            fprintf(stderr, "== Info: %s", data);
+        default: /* in case a new one is introduced to shock us */
+            return 0;
+
+        case CURLINFO_HEADER_OUT:
+            text = "=> Send header";
+            break;
+        case CURLINFO_DATA_OUT:
+            text = "=> Send data";
+            break;
+        case CURLINFO_SSL_DATA_OUT:
+            text = "=> Send SSL data";
+            break;
+        case CURLINFO_HEADER_IN:
+            text = "<= Recv header";
+            break;
+        case CURLINFO_DATA_IN:
+            text = "<= Recv data";
+            break;
+        case CURLINFO_SSL_DATA_IN:
+            text = "<= Recv SSL data";
+            break;
+    }
+
+    dump(text, stderr, (unsigned char *)data, size, config->trace_ascii);
+    return 0;
+}
+#endif
+
 struct MemoryData {
     char *advance;
     size_t sizeleft;
@@ -26,22 +116,20 @@ struct MemoryData {
 static size_t mem_read_callback(void *ptr, size_t size, size_t nmemb,
                                 void *userp) {
     struct MemoryData *puppet = (struct MemoryData *)userp;
-    uint64_t count = size * nmemb;
 
-    if (count < 1) return 0;
+    if (size * nmemb < 1) return 0;
 
     // read as much as it can
-    while (count && puppet->sizeleft) {
+    while (puppet->sizeleft) {
         *(char *)ptr = puppet->advance[0]; /* copy one single byte */
 
         puppet->advance++;  /* advance pointer */
         puppet->sizeleft--; /* less data left */
 
-        count--;
+        return 1;
     }
 
-    return size * nmemb - count; /* this will be 0 if puppet->size is 0, which
-                                    means no more data left to deliver */
+    return 0;
 }
 
 static size_t header_write_callback(void *contents, size_t size, size_t nmemb,
@@ -99,7 +187,8 @@ const char *GetUploadId(const char *host, const char *bucket,
 
     HeaderContent *header = new HeaderContent();
     header->Add(HOST, host);
-    // XXX workaround
+    // XXX
+    // header->Disable(CONTENTTYPE);
     header->Add(CONTENTTYPE, "application/x-www-form-urlencoded");
     UrlParser p(url.str().c_str());
     path_with_query << p.Path() << "?uploads";
@@ -116,6 +205,7 @@ const char *GetUploadId(const char *host, const char *bucket,
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ParserCallback);
 
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
+
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "uploads");
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)strlen("uploads"));
     } else {
@@ -159,7 +249,6 @@ const char *GetUploadId(const char *host, const char *bucket,
     return upload_id;
 }
 
-#if 0
 // XXX need free
 const char *PartPutS3Object(const char *host, const char *bucket,
                             const char *obj_name, const S3Credential &cred,
@@ -169,6 +258,11 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     std::stringstream path_with_query;
     XMLInfo xml;
     xml.ctxt = NULL;
+
+#ifdef DEBUG_CURL
+    struct data config;
+    config.trace_ascii = 1;
+#endif
 
     char *header_buf = (char *)malloc(4 * 1024);
     if (!header_buf) {
@@ -377,28 +471,41 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
 
     HeaderContent *header = new HeaderContent();
     header->Add(HOST, host);
-    // XXX workaround
+    // If you add a header with no content as in 'Accept:' (no data on the right
+    // side of the colon), the internally used header will get disabled. With
+    // this option you can add new headers, replace internal headers and remove
+    // internal headers. To add a header with no content (nothing to the right
+    // side of the colon), use the form 'MyHeader;' (note the ending semicolon).
+    // still a space character there
+    // XXX
+    // header->Disable(CONTENTTYPE);
     header->Add(CONTENTTYPE, "application/xml");
+    header->Add(CONTENTLENGTH, std::to_string(strlen(body.str().c_str())));
     UrlParser p(url.str().c_str());
     path_with_query << p.Path() << "?uploadId=" << upload_id;
     SignPOSTv2(header, path_with_query.str().c_str(), cred);
 
     CURL *curl = curl_easy_init();
     if (curl) {
+#ifdef DEBUG_CURL
+        curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, my_trace);
+        curl_easy_setopt(curl, CURLOPT_DEBUGDATA, &config);
+#endif
+
         /* specify target URL, and note that this URL should include a file
            name, not only a directory */
         curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
 
-        /* we want to use our own read function */
-        curl_easy_setopt(curl, CURLOPT_READFUNCTION, mem_read_callback);
-
         /* now specify which file/data to upload */
         curl_easy_setopt(curl, CURLOPT_READDATA, (void *)&read_data);
+
+        /* we want to use our own read function */
+        curl_easy_setopt(curl, CURLOPT_READFUNCTION, mem_read_callback);
 
         /* provide the size of the upload, we specicially typecast the value
            to curl_off_t since we must be sure to use the correct data size */
         curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE,
-                         (curl_off_t)read_data.sizeleft);
+                         (curl_off_t)strlen(body.str().c_str()));
 
         // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
@@ -482,4 +589,3 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
 
     return true;
 }
-#endif

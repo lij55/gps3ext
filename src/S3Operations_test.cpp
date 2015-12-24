@@ -56,7 +56,7 @@ TEST(Uploader, get_upload_id_long_url_directories) {
 }
 
 /*
-#define OBJ2UPLOAD "test/3iun6"
+#define OBJ2UPLOAD "itfinallyworks"
 TEST(Uploader, upload) {
     S3Credential g_cred = {KEYID, SECRET};
 
@@ -98,10 +98,10 @@ TEST(Uploader, get_upload_id_spaces) {
 
 TEST(Uploader, get_upload_id_spaces_directories) {
     S3Credential g_cred = {KEYID, SECRET};
-    const char *upload_id = GetUploadId(S3HOST, S3BUCKET, "test/ up load/data 1234",
-                                        g_cred);
+    const char *upload_id =
+        GetUploadId(S3HOST, S3BUCKET, "test/ up load/data 1234", g_cred);
 
-    //printf("uploadid = %s\n", upload_id);
+    // printf("uploadid = %s\n", upload_id);
 
     EXPECT_NE(upload_id, (void *)NULL);
 }
