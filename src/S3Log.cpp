@@ -85,16 +85,24 @@ void LogMessage(LOGLEVEL loglevel, const char* fmt, ...) {
 }
 
 #ifdef DEBUGS3
+static bool loginited = false;
 void InitLog() {
-    s3conf_logsock_local = socket(PF_UNIX, SOCK_DGRAM, 0);
-    if(s3conf_logsock_local < 0) {
-        perror("create socket fail");
+    if(!loginited) {
+        s3conf_logsock_local = socket(PF_UNIX, SOCK_DGRAM, 0);
+        if(s3conf_logsock_local < 0) {
+            perror("create socket fail");
+        }
+        
+        /* start with a clean address structure */
+        memset(&s3conf_logserverpath, 0, sizeof(struct sockaddr_un));
+        s3conf_logserverpath.sun_family = AF_UNIX;
+        snprintf(s3conf_logserverpath.sun_path, UNIX_PATH_MAX, SOCKPATH);
+        
+        s3conf_logtype = LOCAL_LOG;
+        s3conf_loglevel = EXT_DEBUG;
+
+        loginited = true;
     }
-    
-    /* start with a clean address structure */
-    memset(&s3conf_logserverpath, 0, sizeof(struct sockaddr_un));
-    s3conf_logserverpath.sun_family = AF_UNIX;
-    snprintf(s3conf_logserverpath.sun_path, UNIX_PATH_MAX, SOCKPATH);
 }
 #endif
 

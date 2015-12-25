@@ -40,7 +40,7 @@ build: $(objects)
 	g++ -o $(app) $(objects) $(CFLAGS) $(LDFLAGS)
 
 %.o: %.cpp
-	$(CPP) $(CFLAGS) $(INCLUDES) -c $< -o $@
+	$(CPP) $(CFLAGS) -DDEBUGS3 $(INCLUDES) -c $< -o $@
 
 buildtest: gtest_main.a $(testobjs)
 	$(CPP) $(CPPFLAGS) $(CXXFLAGS) $^ -o $(testapp) $(LDFLAGS)

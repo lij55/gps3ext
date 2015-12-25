@@ -2,6 +2,7 @@
 #include "S3Downloader.cpp"
 
 TEST(OffsetMgr, simple) {
+    InitLog();
     OffsetMgr *o = new OffsetMgr(4096, 1000);
     Range r = o->NextOffset();
     EXPECT_EQ(r.offset, 0);
