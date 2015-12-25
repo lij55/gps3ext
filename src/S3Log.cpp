@@ -15,7 +15,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-
+#include <netinet/in.h>
 // #include <thread>
 
 #include <vector>
@@ -46,18 +46,20 @@ void _LogMessage(const char* fmt, va_list args) {
 
 void _send_to_local(const char*fmt, va_list args) {
     char buf[1024];
-    vsnprintf(buf, 1024, fmt, args);
-    sendto(s3conf_logsock_local, buf, 1024, 0,
+    int len = vsnprintf(buf, 1024, fmt, args);
+    buf[len-1] = 0;
+    sendto(s3conf_logsock_local, buf, len, 0,
            (struct sockaddr *) &s3conf_logserverpath, 
            sizeof(struct sockaddr_un));
 }
 
 void _send_to_remote(const char*fmt, va_list args) {
     char buf[1024];
-    vsnprintf(buf, 1024, fmt, args);
-    sendto(s3conf_logsock_udp, buf, 1024, 0,
+    int len = vsnprintf(buf, 1024, fmt, args);
+    buf[len-1] = 0;
+    sendto(s3conf_logsock_udp, buf, len, 0,
            (struct sockaddr *) &s3conf_logserveraddr, 
-           sizeof(struct sockaddr_un));
+           sizeof(struct sockaddr_in));
 }
 
 void LogMessage(LOGLEVEL loglevel, const char* fmt, ...) {
@@ -98,7 +100,18 @@ void InitLog() {
         s3conf_logserverpath.sun_family = AF_UNIX;
         snprintf(s3conf_logserverpath.sun_path, UNIX_PATH_MAX, SOCKPATH);
         
-        s3conf_logtype = LOCAL_LOG;
+
+        s3conf_logsock_udp = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+        if(s3conf_logsock_udp < 0) {
+            perror("create socket fail");
+        }
+        
+        memset(&s3conf_logserveraddr, 0, sizeof(struct sockaddr_in));
+        s3conf_logserveraddr.sin_family = AF_INET;
+        s3conf_logserveraddr.sin_port = htons(1111);
+        inet_aton("127.0.0.1", &s3conf_logserveraddr.sin_addr);
+
+        s3conf_logtype = REMOTE_LOG;
         s3conf_loglevel = EXT_DEBUG;
 
         loginited = true;
