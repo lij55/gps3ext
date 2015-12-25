@@ -10,6 +10,8 @@ using std::string;
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
+#include "S3Log.h"
+
 struct S3Credential {
     string keyid;
     string secret;

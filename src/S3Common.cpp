@@ -11,6 +11,8 @@
 #include <sstream>
 #include <map>
 
+#include "gps3conf.h"
+
 using std::stringstream;
 
 bool SignGETv2(HeaderContent *h, const char *path_with_query,
@@ -164,7 +166,7 @@ UrlParser::UrlParser(const char *url) {
     sprintf(this->fullurl, "%s", url);
     result = http_parser_parse_url(this->fullurl, len, false, &u);
     if (result != 0) {
-        EXTLOG(EXT_ERROR, "Parse error : %d\n", result);
+        S3ERROR("Parse error : %d\n", result);
         return;
     }
 
@@ -214,4 +216,9 @@ uint64_t ParserCallback(void *contents, uint64_t size, uint64_t nmemb,
         res = xmlParseChunk(pxml->ctxt, (const char *)contents, realsize, 0);
     }
     return realsize;
+}
+
+Config& GetGlobalS3Config() {
+    static Config s3cfg("s3config.ini");
+    return s3cfg;
 }

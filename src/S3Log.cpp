@@ -7,83 +7,112 @@
 #include <unistd.h>
 #include <cstdio>
 #include <cstdarg>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 
 // #include <thread>
 
-/*
-void EXTLOG(uint8_t level, const char* fmt, ...) {
-	static char buf[1024];
-    va_list args;
-    va_start(args, fmt);
-    vsnprintf(buf, 1023, fmt, args);
-    va_end(args);
+#include <vector>
+#include <memory>
+using std::vector;
+using std::shared_ptr;
+using std::make_shared;
+#include "utils.h"
 
-	switch(level) {
-	case EXT_FATAL:
-	case EXT_ERROR:
-		S3ERROR<<buf<<std::endl;
-		break;
-	case EXT_WARNING:
-		S3WARN<<buf<<std::endl;
-		break;
-	case EXT_INFO:
-		S3INFO<<buf<<std::endl;
-		break;
-	case EXT_DEBUG:
-	default:
-		S3DEBUG<<buf<<std::endl;
-		break;
-	}
+#include "S3Log.h"
+#include "gps3conf.h"
+
+#define SOCKPATH "/tmp/.s3log.sock"
+
+#ifndef UNIX_PATH_MAX
+#define UNIX_PATH_MAX 108
+#endif
+
+
+uint8_t loglevel() {
+    return s3conf_loglevel;
 }
-*/
 
+// fake implement
 void _LogMessage(const char* fmt, va_list args) {
 	vfprintf(stderr, fmt, args);
 }
 
+void _send_to_local(const char*fmt, va_list args) {
+    char buf[1024];
+    vsnprintf(buf, 1024, fmt, args);
+    sendto(s3conf_logsock_local, buf, 1024, 0,
+           (struct sockaddr *) &s3conf_logserverpath, 
+           sizeof(struct sockaddr_un));
+}
 
-int s3conf_loglevel = 1;
-int s3conf_logtype = 1;
+void _send_to_remote(const char*fmt, va_list args) {
+    char buf[1024];
+    vsnprintf(buf, 1024, fmt, args);
+    sendto(s3conf_logsock_udp, buf, 1024, 0,
+           (struct sockaddr *) &s3conf_logserveraddr, 
+           sizeof(struct sockaddr_un));
+}
 
-void LogMessage(int loglevel, const char* fmt, ...) {
-	if(loglevel < s3conf_loglevel) 
+void LogMessage(LOGLEVEL loglevel, const char* fmt, ...) {
+	if(loglevel > s3conf_loglevel) 
 		return;
-	char buf[1024];
 	va_list args;
 	va_start(args, fmt);
-	//vsnprintf(buf, 1023, fmt, args);
-	// va_end(args);
 	switch(s3conf_logtype) {
-	case 1:
+	case INTERNAL_LOG:
 		_LogMessage(fmt, args);
 		break;
-	case 2:
-		vfprintf(stderr,  fmt, args);
-		
+	case STDERR_LOG:
+		vfprintf(stderr, fmt, args);
 		break;
+    case REMOTE_LOG:
+        _send_to_remote(fmt, args);
+        break;
+    case LOCAL_LOG:
+        _send_to_local(fmt, args);
+        break;
 	default:
 		break;
 	}
 	va_end(args);
 }
 
-#define PRINTFUNCTION(i, format, ...)      LogMessage(i, format, __VA_ARGS__)
-//#define PRINTFUNCTION(i, format, ...)      fprintf(stderr, format, __VA_ARGS__)
+#ifdef DEBUGS3
+void InitLog() {
+    s3conf_logsock_local = socket(PF_UNIX, SOCK_DGRAM, 0);
+    if(s3conf_logsock_local < 0) {
+        perror("create socket fail");
+    }
+    
+    /* start with a clean address structure */
+    memset(&s3conf_logserverpath, 0, sizeof(struct sockaddr_un));
+    s3conf_logserverpath.sun_family = AF_UNIX;
+    snprintf(s3conf_logserverpath.sun_path, UNIX_PATH_MAX, SOCKPATH);
+}
+#endif
 
 
 
-#define LOG_FMT   "[%s]%s:%d\t"
-#define LOG_ARGS(LOGLEVEL)  LOGLEVEL, __FILE__, __LINE__
-#define NEWLINE     "\n"
-
-#define LOG_DEBUG(message, args...)     PRINTFUNCTION(1, LOG_FMT message NEWLINE, LOG_ARGS("D"), ## args)
-#define LOG_INFO(message, args...)      PRINTFUNCTION(2, LOG_FMT message NEWLINE, LOG_ARGS("I"), ## args)
-#define LOG_ERROR(message, args...)     PRINTFUNCTION(3, LOG_FMT message NEWLINE, LOG_ARGS("E"), ## args)
-
-
+#if 0
 int main() {
-	LOG_DEBUG("%s\t%d","asdfasdfasdfa",324);
-	LOG_INFO("asdfasdfasdfa");
-	LOG_ERROR("asdfasdfasdfa");
+
+    S3DEBUG("hello");
 	return 0;
 }
+
+        si_logserver.sin_family = AF_INET;
+        si_logserver.sin_port = htons(1111);
+        if (inet_aton("127.0.0.1", &si_logserver.sin_addr) == 0) {  // error
+            // log error here
+            return;
+        }
+        logsock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+#endif 

@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <cstdint>
 #include <cstring>
-
+#include "ini.h"
 bool gethttpnow(char datebuf[65]);
 
 bool lowercase(char* out, const char* in);
@@ -26,8 +26,9 @@ bool sha256hmac(char* str, char out[65], char* secret);
 char* SignatureV2(const char* date, const char* path, const char* key);
 char* SignatureV4(const char* date, const char* path, const char* key);
 
+#ifdef DEBUGS3
 void InitLog();
-void EXTLOG(const char* fmt, ...);
+#endif
 
 #include <string>
 using std::string;
@@ -109,5 +110,14 @@ private:
     char* data;
 };
 
+
+class Config {
+ public:
+    Config(const char* filename);
+    ~Config();
+    const char* Get(const char* sec, const char* key, const char* defaultvalue);
+ private:
+    ini_t *_conf;
+};
 
 #endif  // _UTILFUNCTIONS_

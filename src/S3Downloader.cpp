@@ -67,7 +67,7 @@ BlockingBuffer::~BlockingBuffer() {
 bool BlockingBuffer::Init() {
     this->bufferdata = (char *)malloc(this->bufcap);
     if (!this->bufferdata) {
-        EXTLOG(EXT_ERROR, "alloc error\n");
+        S3ERROR("alloc error\n");
         return false;
     }
     pthread_mutex_init(&this->stat_mutex, NULL);
@@ -117,7 +117,7 @@ uint64_t BlockingBuffer::Fill() {
         if (leftlen != 0) {
             readlen = this->fetchdata(offset, this->bufferdata + this->realsize,
                                       leftlen);
-            EXTLOG(EXT_DEBUG, "return %lld from libcurl\n", readlen);
+            S3DEBUG("return %lld from libcurl\n", readlen);
         } else {
             readlen = 0;  // EOF
         }
@@ -125,7 +125,7 @@ uint64_t BlockingBuffer::Fill() {
             // if (this->realsize == 0) {
             this->eof = true;
             //}
-            EXTLOG(EXT_DEBUG, "reach end of file\n");
+            S3DEBUG("reach end of file\n");
             break;
         } else if (readlen == -1) {  // Error, network error or sth.
             // perror, retry
@@ -171,7 +171,7 @@ void *DownloadThreadfunc(void *data) {
     // assert offset > 0
     do {
         filled_size = buffer->Fill();
-        EXTLOG(EXT_DEBUG, "Fillsize is %lld\n", filled_size);
+        S3DEBUG("Fillsize is %lld\n", filled_size);
         if (buffer->EndOfFile()) break;
         if (filled_size == -1) {  // Error
             // retry?
@@ -181,7 +181,7 @@ void *DownloadThreadfunc(void *data) {
                 continue;
         }
     } while (1);
-    EXTLOG(EXT_DEBUG, "quit download\n");
+    S3DEBUG("quit download\n");
     return NULL;
 }
 
@@ -193,12 +193,12 @@ Downloader::Downloader(uint8_t part_num) : num(part_num) {
 bool Downloader::init(const char *url, uint64_t size, uint64_t chunksize,
                       S3Credential *pcred) {
     this->o = new OffsetMgr(size, chunksize);
-    EXTLOG(EXT_DEBUG, "chunksize is %d\n", chunksize);
+    S3DEBUG("chunksize is %d\n", chunksize);
     for (int i = 0; i < this->num; i++) {
         this->buffers[i] = BlockingBuffer::CreateBuffer(
             url, o, pcred);  // decide buffer according to url
         if (!this->buffers[i]->Init()) {
-            EXTLOG(EXT_ERROR, "Blocking buffer init fail\n");
+            S3ERROR("Blocking buffer init fail\n");
         }
         pthread_create(&this->threads[i], NULL, DownloadThreadfunc,
                        this->buffers[i]);
@@ -223,7 +223,7 @@ RETRY:
     if (tmplen < len) {
         this->chunkcount++;
         if (buf->Error()) {
-            EXTLOG(EXT_ERROR, "buffer error");
+            S3ERROR("buffer error");
             return false;
         }
     }
@@ -235,7 +235,7 @@ RETRY:
     }
     len = tmplen;
 
-    EXTLOG(EXT_DEBUG, "in downloader %lld, %lld, %lld\n", filelen, this->readlen, len);
+    S3DEBUG("in downloader %lld, %lld, %lld\n", filelen, this->readlen, len);
     return true;
 }
 

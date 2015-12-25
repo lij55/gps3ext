@@ -41,7 +41,7 @@ bool S3Reader_fake::Init(int segid, int segnum, int chunksize) {
 
     // Validate url first
     if (!this->ValidateURL()) {
-        EXTLOG(EXT_ERROR,"validate url fail %s\n", this->url.c_str());
+        S3ERROR("validate url fail %s\n", this->url.c_str());
     }
 
     // TODO: As separated function for generating url
