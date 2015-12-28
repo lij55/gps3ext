@@ -1,4 +1,4 @@
-/** 
+/**
  * Copyright (c) 2015 rxi
  *
  * This library is free software; you can redistribute it and/or modify it
@@ -16,7 +16,6 @@ struct ini_t {
   char *data;
   char *end;
 };
-
 
 /* Case insensitive string compare */
 static int strcmpci(const char *a, const char *b) {
@@ -51,7 +50,6 @@ static char* discard_line(ini_t *ini, char *p) {
   return p;
 }
 
-
 static char *unescape_quoted_value(ini_t *ini, char *p) {
   /* Use `q` as write-head and `p` as read-head, `p` is always ahead of `q`
    * as escape sequences are always larger than their resultant data */
@@ -80,7 +78,6 @@ static char *unescape_quoted_value(ini_t *ini, char *p) {
 end:
   return q;
 }
-
 
 /* Splits data in place into strings containing section-headers, keys and
  * values using one or more '\0' as a delimiter. Unescapes quoted values */
@@ -131,7 +128,7 @@ static void split_data(ini_t *ini) {
           p = discard_line(ini, line_start);
           break;
         }
-    
+
         if (*p == '"') {
           /* Handle quoted string value */
           value_start = p;
@@ -155,8 +152,6 @@ static void split_data(ini_t *ini) {
     }
   }
 }
-
-
 
 ini_t* ini_load(const char *filename) {
   ini_t *ini = NULL;
@@ -203,12 +198,10 @@ fail:
   return NULL;
 }
 
-
 void ini_free(ini_t *ini) {
   free(ini->data);
   free(ini);
 }
-
 
 const char* ini_get(ini_t *ini, const char *section, const char *key) {
   const char *current_section = "";
@@ -240,7 +233,6 @@ const char* ini_get(ini_t *ini, const char *section, const char *key) {
 
   return NULL;
 }
-
 
 int ini_sget(
   ini_t *ini, const char *section, const char *value,

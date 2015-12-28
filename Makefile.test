@@ -1,25 +1,21 @@
-GTEST_DIR = gtest
-
 CPP = g++
 CFLAGS = -g3 -std=c++11 -fPIC -fprofile-arcs -ftest-coverage
 INCLUDES = -Isrc -Ilib -I/usr/include/libxml2
 LDFLAGS = -lpthread -lcrypto -lcurl -lxml2 -lgcov
 
-sources = src/S3Downloader.cpp src/utils.cpp lib/http_parser.cpp src/standalone.cpp src/S3Common.cpp src/S3Uploader.cpp src/S3Operations.cpp
 testcources = src/utils_test.cpp src/S3Downloader_test.cpp lib/http_parser.cpp src/S3Common_test.cpp src/S3ExtWrapper_test.cpp src/S3Operations_test.cpp src/S3Log_test.cpp src/gps3conf.cpp lib/ini.cpp
 
-objects = $(sources:.cpp=.o)
+testapp = s3test
 testobjs = $(testcources:.cpp=.o)
 
-app = s3fetch
-testapp = tests3
+GTEST_DIR = gtest
 
 # Usually you shouldn't tweak such internal variables, indicated by a
 # trailing _.
 GTEST_SRCS_ = $(GTEST_DIR)/src/*.cc $(GTEST_DIR)/src/*.h $(GTEST_HEADERS)
 
 # all: build buildtest
-all: build
+all: test
 
 $(testobjs) gtest-all.o gtest_main.o: INCLUDES += -I$(GTEST_DIR)/include -I$(GTEST_DIR)/
 
@@ -36,9 +32,6 @@ gtest_main.o : $(GTEST_SRCS_)
 gtest_main.a : gtest-all.o gtest_main.o
 	$(AR) $(ARFLAGS) $@ $^
 
-build: $(objects)
-	g++ -o $(app) $(objects) $(CFLAGS) $(LDFLAGS)
-
 %.o: %.cpp
 	$(CPP) $(CFLAGS) -DDEBUGS3 $(INCLUDES) -c $< -o $@
 
@@ -52,7 +45,7 @@ coverage: test
 	@gcov -r $(testcources) | grep -v test.cpp | grep -A 2 "src/.*.cpp"
 
 clean:
-	rm -f $(app) $(testapp) src/*.o src/*.a src/lib/*.o *.o *.a
+	rm -f $(testapp) src/*.o src/*.a src/lib/*.o *.o *.a
 	rm -f *.gcov src/*.gcov src/*.gcda src/*.gcno
 
 tags:
@@ -67,4 +60,4 @@ style:
 format:
 	clang-format -style="{BasedOnStyle: Google, IndentWidth: 4}" -i src/*.cpp src/*.h
 
-.PHONY: test clean tags lint style format
+.PHONY: test coverage clean lint style format

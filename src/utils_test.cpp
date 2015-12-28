@@ -75,14 +75,12 @@ TEST(utils, sha256hmac) {
         hash_str);
 }
 
-
 concurrent_queue<int> q;
-void* worker ( void* a) {
+void *worker(void *a) {
     int r;
-    while(1) {
+    while (1) {
         q.deQ(r);
-        if ( r == -1 ) 
-            break;
+        if (r == -1) break;
     }
 }
 
@@ -91,22 +89,20 @@ void* worker ( void* a) {
 TEST(queue, simple) {
     pthread_t thread_id[num_threads];
     for (int tnum = 0; tnum < num_threads; tnum++) {
-        pthread_create(&thread_id[tnum], NULL,
-                       &worker, NULL);
+        pthread_create(&thread_id[tnum], NULL, &worker, NULL);
     }
     int r = 1024;
-    while(r--) {
+    while (r--) {
         q.enQ(r);
     }
 
-    for( int i  = 0; i < num_threads; i++) {
+    for (int i = 0; i < num_threads; i++) {
         q.enQ(-1);
     }
 
     for (int i = 0; i < num_threads; i++) {
         pthread_join(thread_id[i], NULL);
     }
-    
 }
 
 #include <memory>
@@ -129,12 +125,11 @@ TEST(databuffer, simple) {
     EXPECT_EQ(pdata->append(TEST_STRING, strlen(TEST_STRING)), 43);
     EXPECT_EQ(pdata->append(TEST_STRING, strlen(TEST_STRING)), 42);
     EXPECT_EQ(pdata->append(TEST_STRING, strlen(TEST_STRING)), 0);
-    
+
     EXPECT_TRUE(pdata->full());
 
     m.Update(pdata->getdata(), 128);
     EXPECT_STREQ("67e3cb156ceb62e5f114f075a8ef3063", m.Get());
-
 
     pdata->reset();
     EXPECT_EQ(pdata->len(), 0);
@@ -148,5 +143,5 @@ TEST(databuffer, simple) {
     EXPECT_STREQ("9e107d9d372bb6826bd81d3542a419d6", m.Get());
     EXPECT_EQ(pdata->append(TEST_STRING, strlen(TEST_STRING)), 43);
     EXPECT_EQ(pdata->append(TEST_STRING, strlen(TEST_STRING)), 42);
-    EXPECT_EQ(pdata->append(TEST_STRING, strlen(TEST_STRING)), 0);    
+    EXPECT_EQ(pdata->append(TEST_STRING, strlen(TEST_STRING)), 0);
 }

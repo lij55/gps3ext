@@ -230,44 +230,37 @@ const char *MD5Calc::Get() {
     return this->result.c_str();
 }
 
-
-
-DataBuffer::DataBuffer(uint64_t size) 
-    :maxsize(size)
-    ,length(0) {
-    this->data = (char*) malloc(this->maxsize);
+DataBuffer::DataBuffer(uint64_t size) : maxsize(size), length(0) {
+    this->data = (char *)malloc(this->maxsize);
 }
 
 DataBuffer::~DataBuffer() {
-    if(this->data) {
+    if (this->data) {
         free(this->data);
     }
 }
 
-uint64_t DataBuffer::append(const char* buf, uint64_t len) {
+uint64_t DataBuffer::append(const char *buf, uint64_t len) {
     uint64_t copylen = std::min(len, maxsize - length);
     memcpy(this->data + length, buf, copylen);
     this->length += copylen;
     return copylen;
 }
 
-Config::Config(const char* filename)
-    : _conf(NULL) {
-    if(filename)
-        this->_conf = ini_load(filename);
+Config::Config(const char *filename) : _conf(NULL) {
+    if (filename) this->_conf = ini_load(filename);
 }
 
 Config::~Config() {
-    if(this->_conf)
-        ini_free(this->_conf);
+    if (this->_conf) ini_free(this->_conf);
 }
 
-const char* Config::Get(const char* sec, const char* key, const char* defaultvalue) {
-    const char* ret = defaultvalue;
-    if(this->_conf) {
-        const char* tmp = ini_get(this->_conf, sec, key);
-        if(tmp)
-            ret = tmp;
+const char *Config::Get(const char *sec, const char *key,
+                        const char *defaultvalue) {
+    const char *ret = defaultvalue;
+    if (this->_conf) {
+        const char *tmp = ini_get(this->_conf, sec, key);
+        if (tmp) ret = tmp;
     }
     return ret;
 }

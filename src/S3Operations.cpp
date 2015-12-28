@@ -19,12 +19,12 @@ using std::string;
 using std::stringstream;
 
 #ifdef DEBUG_CURL
-struct data {
+struct debug_data {
     char trace_ascii; /* 1 or 0 */
 };
 
-static void dump(const char *text, FILE *stream, unsigned char *ptr,
-                 size_t size, char nohex) {
+static void dump_debug_data(const char *text, FILE *stream, unsigned char *ptr,
+                            size_t size, char nohex) {
     size_t i;
     size_t c;
 
@@ -71,9 +71,9 @@ static void dump(const char *text, FILE *stream, unsigned char *ptr,
     fflush(stream);
 }
 
-static int my_trace(CURL *handle, curl_infotype type, char *data, size_t size,
-                    void *userp) {
-    struct data *config = (struct data *)userp;
+static int trace_debug_data(CURL *handle, curl_infotype type, char *data,
+                            size_t size, void *userp) {
+    struct debug_data *config = (struct debug_data *)userp;
     const char *text;
     (void)handle; /* prevent compiler warning */
 
@@ -103,7 +103,8 @@ static int my_trace(CURL *handle, curl_infotype type, char *data, size_t size,
             break;
     }
 
-    dump(text, stderr, (unsigned char *)data, size, config->trace_ascii);
+    dump_debug_data(text, stderr, (unsigned char *)data, size,
+                    config->trace_ascii);
     return 0;
 }
 #endif
@@ -117,9 +118,24 @@ static size_t mem_read_callback(void *ptr, size_t size, size_t nmemb,
                                 void *userp) {
     struct MemoryData *puppet = (struct MemoryData *)userp;
 
+#ifdef MULTIBYTESMODE
+    size_t realsize = size * nmemb;
+
+    size_t n2read = realsize < puppet->sizeleft ? realsize : puppet->sizeleft;
+
+    printf("n2read = %d, realsize = %d, puppet->sizeleft = %d\n", n2read,
+           realsize, puppet->sizeleft);
+
+    if (!n2read) return 0;
+
+    memcpy(ptr, puppet->advance, n2read);
+    puppet->advance += n2read;  /* advance pointer */
+    puppet->sizeleft -= n2read; /* less data left */
+
+    return n2read;
+#else
     if (size * nmemb < 1) return 0;
 
-    // read as much as it can
     while (puppet->sizeleft) {
         *(char *)ptr = puppet->advance[0]; /* copy one single byte */
 
@@ -130,6 +146,7 @@ static size_t mem_read_callback(void *ptr, size_t size, size_t nmemb,
     }
 
     return 0;
+#endif
 }
 
 static size_t header_write_callback(void *contents, size_t size, size_t nmemb,
@@ -259,11 +276,6 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     XMLInfo xml;
     xml.ctxt = NULL;
 
-#ifdef DEBUG_CURL
-    struct data config;
-    config.trace_ascii = 1;
-#endif
-
     char *header_buf = (char *)malloc(4 * 1024);
     if (!header_buf) {
         printf("failed to malloc header_buf\n");
@@ -352,7 +364,7 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     std::ostringstream out;
     out << header_buf;
 
-    //std::cout << header_buf << std::endl;
+    // std::cout << header_buf << std::endl;
 
     // TODO general header content extracting func
     uint64_t etag_start_pos = out.str().find("ETag: ") + 6;
@@ -416,6 +428,11 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     XMLInfo xml;
     xml.ctxt = NULL;
 
+#ifdef DEBUG_CURL
+    struct debug_data config;
+    config.trace_ascii = 1;
+#endif
+
     char *header_buf = (char *)malloc(4 * 1024);
     if (!header_buf) {
         printf("failed to malloc header_buf\n");
@@ -464,7 +481,7 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     }
     body << "</CompleteMultipartUpload>";
 
-    //std::cout << body.str().c_str() << std::endl;
+    // std::cout << body.str().c_str() << std::endl;
 
     struct MemoryData read_data = {(char *)body.str().c_str(),
                                    strlen(body.str().c_str())};
@@ -488,7 +505,7 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     CURL *curl = curl_easy_init();
     if (curl) {
 #ifdef DEBUG_CURL
-        curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, my_trace);
+        curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, trace_debug_data);
         curl_easy_setopt(curl, CURLOPT_DEBUGDATA, &config);
 #endif
 
@@ -529,7 +546,7 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
         fprintf(stderr, "curl_easy_perform() failed: %s\n",
                 curl_easy_strerror(res));
 
-    //std::cout << header_buf << std::endl;
+    // std::cout << header_buf << std::endl;
 
     // HTTP/1.1 200 OK
     // x-amz-id-2: Uuag1LuByRx9e6j5Onimru9pO4ZVKnJ2Qz7/C1NPcfTWAtRPfTaOFg==

@@ -11,6 +11,7 @@
 #include "fmgr.h"
 
 #include "S3ExtWrapper.h"
+#include "S3Log.h"
 #include "utils.h"
 /* Do the module magic dance */
 
@@ -41,7 +42,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
     /* Get our internal description of the protocol */
     myData = (S3ExtBase *)EXTPROTOCOL_GET_USER_CTX(fcinfo);
-    // EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
+    // S3DEBUG("%d myData: 0x%x\n", __LINE__, myData);
     if (EXTPROTOCOL_IS_LAST_CALL(fcinfo)) {
         if (!myData->Destroy()) {
             ereport(ERROR, (0, errmsg("Cleanup S3 extention failed")));
@@ -52,14 +53,16 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
     if (myData == NULL) {
         /* first call. do any desired init */
+#ifdef DEBUGS3
         InitLog();
+#endif
         const char *p_name = "s3";
         char *url = EXTPROTOCOL_GET_URL(fcinfo);
 
         myData = CreateExtWrapper(
             "http://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/");
 
-        EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
+        S3DEBUG("%d myData: 0x%x\n", __LINE__, myData);
 
         // TODO: Get real segment number and segment id
         if (!myData || !myData->Init(0, 1, 64 * 1024 * 1024)) {
@@ -85,12 +88,12 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
     data = EXTPROTOCOL_GET_DATABUF(fcinfo);
     data_len = EXTPROTOCOL_GET_DATALEN(fcinfo);
-    // EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
+    // S3DEBUG("%d myData: 0x%x\n", __LINE__, myData);
     if (data_len > 0) {
         nread = data_len;
         if (!myData->TransferData(data, nread))
             ereport(ERROR, (0, errmsg("s3_import: could not read data")));
-        EXTLOG("read %d data from S3\n", nread);
+        S3DEBUG("read %d data from S3\n", nread);
     }
 
     PG_RETURN_INT32((int)nread);
@@ -112,7 +115,7 @@ Datum s3_export(PG_FUNCTION_ARGS) {
 
     /* Get our internal description of the protocol */
     myData = (S3ExtBase *)EXTPROTOCOL_GET_USER_CTX(fcinfo);
-    // EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
+    // S3DEBUG("%d myData: 0x%x\n", __LINE__, myData);
     if (EXTPROTOCOL_IS_LAST_CALL(fcinfo)) {
         if (!myData->Destroy()) {
             ereport(ERROR, (0, errmsg("Cleanup S3 extention failed")));
@@ -123,14 +126,16 @@ Datum s3_export(PG_FUNCTION_ARGS) {
 
     if (myData == NULL) {
         /* first call. do any desired init */
+#ifdef DEBUGS3
         InitLog();
+#endif
         const char *p_name = "s3";
         char *url = EXTPROTOCOL_GET_URL(fcinfo);
 
         myData = CreateExtWrapper(
             "http://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/");
 
-        // EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
+        // S3DEBUG("%d myData: 0x%x\n", __LINE__, myData);
 
         // TODO: Get real segment number and segment id
         if (!myData || !myData->Init(0, 1, 64 * 1024 * 1024)) {
@@ -148,12 +153,12 @@ Datum s3_export(PG_FUNCTION_ARGS) {
 
     data = EXTPROTOCOL_GET_DATABUF(fcinfo);
     data_len = EXTPROTOCOL_GET_DATALEN(fcinfo);
-    EXTLOG("%d myData: 0x%x\n", __LINE__, myData);
+    S3DEBUG("%d myData: 0x%x\n", __LINE__, myData);
     if (data_len > 0) {
         nwrite = data_len;
         if (!myData->TransferData(data, nwrite))
             ereport(ERROR, (0, errmsg("s3_export: could not write data")));
-        EXTLOG("write %d data from S3\n", nwrite);
+        S3DEBUG("write %d data from S3\n", nwrite);
     }
 
     PG_RETURN_INT32((int)nwrite);

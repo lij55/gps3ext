@@ -25,7 +25,7 @@ int s3conf_logsock_udp = -1;
 
 int s3conf_loglevel = -1;
 int s3conf_threadnum = 5;
-int s3conf_chunksize = 64*1024*1024;
+int s3conf_chunksize = 64 * 1024 * 1024;
 int s3conf_segid = -1;
 int s3conf_segnum = -1;
 int s3conf_logtype = -1;
@@ -47,19 +47,15 @@ extern void InitLog();
 // not thread safe!!
 // Called only once.
 void InitConfig() {
-
     int s3conf_loglevel = 1;
     int s3conf_logtype = LOCAL_LOG;
 
 #ifdef DEBUGS3
     InitLog();
 #else
-    //
+//
 #endif
     // TO BE FINISHED
-
 }
 
-void ClearConfig() {
-}
-
+void ClearConfig() {}

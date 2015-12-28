@@ -54,4 +54,3 @@ extern struct sockaddr_un s3conf_logserverpath;
 void InitConfig();
 
 void ClearConfig();
-

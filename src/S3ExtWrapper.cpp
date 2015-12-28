@@ -182,14 +182,14 @@ bool S3Protocol_t::Write(char *data, size_t &len) {
         // not initialized?
         return false;
     }
-    EXTLOG("write_len is %d\n", len);
+    S3DEBUG("write_len is %d\n", len);
 
     bool result = fileuploader->write(data, len);
     if (!result) {
-        EXTLOG("write data via fileuploader fail\n");
+        S3DEBUG("write data via fileuploader fail\n");
         return false;
     }
-    EXTLOG("write_len is %lld\n", len);
+    S3DEBUG("write_len is %lld\n", len);
     return true;
 }
 */

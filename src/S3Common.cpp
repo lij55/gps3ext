@@ -78,7 +78,8 @@ bool SignPOSTv2(HeaderContent *h, const char *path_with_query,
              << "\n" << typestr << "\n" << timestr << "\n" << path_with_query;
     } else {
         sstr << "POST\n"
-             << "\n" << "\n" << timestr << "\n" << path_with_query;
+             << "\n"
+             << "\n" << timestr << "\n" << path_with_query;
     }
     printf("%s\n", sstr.str().c_str());
     char *tmpbuf = sha1hmac(sstr.str().c_str(), cred.secret.c_str());
@@ -158,12 +159,13 @@ UrlParser::UrlParser(const char *url) {
 
     struct http_parser_url u;
     int len, result;
+
     len = strlen(url);
     this->fullurl = (char *)malloc(len + 1);
     if (!this->fullurl) return;
 
-    memset(this->fullurl, 0, len + 1);
     sprintf(this->fullurl, "%s", url);
+    // only parse len, no need to memset this->fullurl
     result = http_parser_parse_url(this->fullurl, len, false, &u);
     if (result != 0) {
         S3ERROR("Parse error : %d\n", result);
@@ -218,7 +220,7 @@ uint64_t ParserCallback(void *contents, uint64_t size, uint64_t nmemb,
     return realsize;
 }
 
-Config& GetGlobalS3Config() {
+Config &GetGlobalS3Config() {
     static Config s3cfg("s3config.ini");
     return s3cfg;
 }

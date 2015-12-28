@@ -61,63 +61,61 @@ using std::condition_variable;
 using std::queue;
 using std::unique_lock;
 
-template<typename Data>
-class concurrent_queue
-{
- private:
+template <typename Data>
+class concurrent_queue {
+   private:
     queue<Data> _q;
     mutable mutex _m;
     condition_variable _c;
- public:
-    void enQ(Data const& data)
-    {
+
+   public:
+    void enQ(Data const& data) {
         _m.lock();
         bool isEmpty = _q.empty();
         _q.push(data);
-        if(isEmpty)  {
+        if (isEmpty) {
             _c.notify_all();
         }
         _m.unlock();
     }
 
-    void deQ(Data& popped_value)
-    {
+    void deQ(Data& popped_value) {
         unique_lock<mutex> lk(_m);
-        while(_q.empty()) {
+        while (_q.empty()) {
             _c.wait(lk);
-        }       
-        popped_value=_q.front();
+        }
+        popped_value = _q.front();
         _q.pop();
     }
 };
 
 class DataBuffer {
-public:
+   public:
     DataBuffer(uint64_t size);
     ~DataBuffer();
-    void reset() {length = 0; };
+    void reset() { length = 0; };
 
-    uint64_t append(const char* buf, uint64_t len);   // ret < len means full
-    const char* getdata() { return data; } ;
+    uint64_t append(const char* buf, uint64_t len);  // ret < len means full
+    const char* getdata() { return data; };
     uint64_t len() { return this->length; };
-    bool full() {return maxsize == length; };
-    bool empty() {return 0 == length; };
+    bool full() { return maxsize == length; };
+    bool empty() { return 0 == length; };
 
-private:
+   private:
     const uint64_t maxsize;
     uint64_t length;
     // uint64_t offset;
     char* data;
 };
 
-
 class Config {
- public:
+   public:
     Config(const char* filename);
     ~Config();
     const char* Get(const char* sec, const char* key, const char* defaultvalue);
- private:
-    ini_t *_conf;
+
+   private:
+    ini_t* _conf;
 };
 
 #endif  // _UTILFUNCTIONS_
