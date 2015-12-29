@@ -1,5 +1,7 @@
 #include "S3ExtWrapper.h"
 #include "utils.h"
+#include "gps3conf.h"
+#include "gps3ext.h"
 
 #include "sstream"
 using std::stringstream;
@@ -10,16 +12,27 @@ S3ExtBase *CreateExtWrapper(const char *url) {
 }
 
 S3ExtBase::S3ExtBase(const char *url) {
+    InitConfig();
+
     this->url = url;
 
     // get following from config
-    this->concurrent_num = 2;
-    this->cred.secret = "oCTLHlu3qJ+lpBH/+JcIlnNuDebFObFNFeNvzBF0";
-    this->cred.keyid = "AKIAIAFSMJUMQWXB2PUQ";
+    this->cred.secret = s3ext_secret;
+    this->cred.keyid = s3ext_accessid;
 
-    this->segid = -1;
-    this->segnum = -1;
-    this->chunksize = -1;
+    this->segid = s3ext_segid;
+    this->segnum = s3ext_segnum;
+
+    this->chunksize = s3ext_chunksize;
+    this->concurrent_num = s3ext_threadnum;
+
+    // this->concurrent_num = 2;
+    // this->cred.secret = "oCTLHlu3qJ+lpBH/+JcIlnNuDebFObFNFeNvzBF0";
+    // this->cred.keyid = "AKIAIAFSMJUMQWXB2PUQ";
+
+    // this->segid = -1;
+    // this->segnum = -1;
+    // this->chunksize = -1;
 }
 
 S3ExtBase::~S3ExtBase() {}

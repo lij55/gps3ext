@@ -264,3 +264,11 @@ const char *Config::Get(const char *sec, const char *key,
     }
     return ret;
 }
+
+bool Config::Scan(const char *sec, const char *key, const char *scanfmt,
+                  void *dst) {
+    if (this->_conf) {
+        return ini_sget(this->_conf, sec, key, scanfmt, dst);
+    }
+    return false;
+}

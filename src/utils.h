@@ -113,6 +113,7 @@ class Config {
     Config(const char* filename);
     ~Config();
     const char* Get(const char* sec, const char* key, const char* defaultvalue);
+    bool Scan(const char* sec, const char* key, const char* scanfmt, void* dst);
 
    private:
     ini_t* _conf;
