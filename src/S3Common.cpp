@@ -164,7 +164,9 @@ UrlParser::UrlParser(const char *url) {
     this->fullurl = (char *)malloc(len + 1);
     if (!this->fullurl) return;
 
-    sprintf(this->fullurl, "%s", url);
+    memcpy(this->fullurl, url, len);
+    this->fullurl[len] = 0;
+
     // only parse len, no need to memset this->fullurl
     result = http_parser_parse_url(this->fullurl, len, false, &u);
     if (result != 0) {
@@ -223,4 +225,32 @@ uint64_t ParserCallback(void *contents, uint64_t size, uint64_t nmemb,
 Config &GetGlobalS3Config() {
     static Config s3cfg("s3config.ini");
     return s3cfg;
+}
+
+char *get_opt_s3(const char *url, const char *key) {
+    char *key2search = (char *)malloc(strlen(key) + 3);
+    int key_len = strlen(key);
+
+    key2search[0] = ' ';
+    memcpy(key2search + 1, key, key_len);
+    key2search[key_len + 1] = '=';
+    key2search[key_len + 2] = 0;
+
+    const char *delimiter = " ";
+    const char *options = strstr(url, delimiter);
+    int len = strlen(url) - strlen(options);
+
+    const char *key_f = strstr(options, key2search) + strlen(key2search);
+    const char *key_tailing = strstr(key_f, delimiter);
+    // strlen(strstr(key_f, delimiter)) will be zero if key_tailing is NULL,
+    // still works
+    int val_len = strlen(key_f) - strlen(strstr(key_f, delimiter));
+    char *key_val = (char *)malloc(val_len + 1);
+
+    memcpy(key_val, key_f, len);
+    key_val[len] = 0;
+
+    free(key2search);
+
+    return key_val;
 }
