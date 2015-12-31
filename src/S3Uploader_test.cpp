@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "S3Operations.cpp"
+#include "S3Uploader.cpp"
 
 #define S3HOST "s3-us-west-2.amazonaws.com"
 #define S3BUCKET "metro.pivotal.io"
