@@ -47,8 +47,8 @@ S3Reader::S3Reader(const char *url) : S3ExtBase(url) {
 
 bool S3Reader::Init(int segid, int segnum, int chunksize) {
     // set segment id and num
-    this->segid = segid;    // fake
-    this->segnum = segnum;  // fake
+    this->segid = s3ext_segid;
+    this->segnum = s3ext_segnum;
     this->contentindex = this->segid;
 
     this->chunksize = chunksize;

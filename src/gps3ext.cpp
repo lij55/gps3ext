@@ -58,12 +58,12 @@ Datum s3_import(PG_FUNCTION_ARGS) {
     }
 
     if (myData == NULL) {
-        /* first call. do any desired init */
+/* first call. do any desired init */
 #ifdef DEBUGS3
         InitLog();
 #endif
         const char *p_name = "s3";
-        char *url = EXTPROTOCOL_GET_URL(fcinfo);
+        char *url_with_options = EXTPROTOCOL_GET_URL(fcinfo);
 
         // truncate url
         const char *delimiter = " ";
@@ -76,9 +76,6 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         s3ext_secret = get_opt_s3(options, "secret");
         s3ext_accessid = get_opt_s3(options, "accessid");
 
-        s3ext_segid = atoi(get_opt_s3(options, "segid"));
-        s3ext_segnum = atoi(get_opt_s3(options, "segnum"));
-
         s3ext_chunksize = atoi(get_opt_s3(options, "chunksize"));
         s3ext_threadnum = atoi(get_opt_s3(options, "threadnum"));
 
@@ -86,8 +83,8 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
         S3DEBUG("%d myData: 0x%x\n", __LINE__, myData);
 
-        // TODO: Get real segment number and segment id
-        if (!myData || !myData->Init(0, 1, 64 * 1024 * 1024)) {
+        if (!myData ||
+            !myData->Init(s3ext_segid, s3ext_segnum, s3ext_chunksize)) {
             if (myData) delete myData;
             ereport(ERROR, (0, errmsg("Init S3 extension fail")));
         }
@@ -147,7 +144,7 @@ Datum s3_export(PG_FUNCTION_ARGS) {
     }
 
     if (myData == NULL) {
-        /* first call. do any desired init */
+/* first call. do any desired init */
 #ifdef DEBUGS3
         InitLog();
 #endif
@@ -165,9 +162,6 @@ Datum s3_export(PG_FUNCTION_ARGS) {
         s3ext_secret = get_opt_s3(options, "secret");
         s3ext_accessid = get_opt_s3(options, "accessid");
 
-        s3ext_segid = atoi(get_opt_s3(options, "segid"));
-        s3ext_segnum = atoi(get_opt_s3(options, "segnum"));
-
         s3ext_chunksize = atoi(get_opt_s3(options, "chunksize"));
         s3ext_threadnum = atoi(get_opt_s3(options, "threadnum"));
 
@@ -175,8 +169,8 @@ Datum s3_export(PG_FUNCTION_ARGS) {
 
         // S3DEBUG("%d myData: 0x%x\n", __LINE__, myData);
 
-        // TODO: Get real segment number and segment id
-        if (!myData || !myData->Init(0, 1, 64 * 1024 * 1024)) {
+        if (!myData ||
+            !myData->Init(s3ext_segid, s3ext_segnum, s3ext_chunksize)) {
             if (myData) delete myData;
             ereport(ERROR, (0, errmsg("Init S3 extension fail")));
         }

@@ -28,8 +28,8 @@ struct Uploader {
     Uploader();
     ~Uploader();
 
-    bool init(const char* data, S3Credential* cred);
-    bool write(char* buf, uint64_t& len);
+    bool init(const char *data, S3Credential *cred);
+    bool write(char *buf, uint64_t &len);
     void destroy();
 
    private:

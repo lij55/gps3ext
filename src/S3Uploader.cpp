@@ -624,4 +624,3 @@ Uploader::~Uploader() {}
 void Uploader::destroy() {}
 
 bool Uploader::write(char *data, uint64_t &len) {}
-

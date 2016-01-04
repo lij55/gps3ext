@@ -80,6 +80,6 @@ struct XMLInfo {
 uint64_t ParserCallback(void* contents, uint64_t size, uint64_t nmemb,
                         void* userp);
 
-char *get_opt_s3(const char *url, const char *key);
+char* get_opt_s3(const char* url, const char* key);
 
 #endif  // __S3_COMMON_H__
