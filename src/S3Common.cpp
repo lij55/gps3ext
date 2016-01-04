@@ -238,7 +238,6 @@ char *get_opt_s3(const char *url, const char *key) {
 
     const char *delimiter = " ";
     const char *options = strstr(url, delimiter);
-    int len = strlen(url) - strlen(options);
 
     const char *key_f = strstr(options, key2search) + strlen(key2search);
     const char *key_tailing = strstr(key_f, delimiter);
@@ -247,8 +246,8 @@ char *get_opt_s3(const char *url, const char *key) {
     int val_len = strlen(key_f) - strlen(strstr(key_f, delimiter));
     char *key_val = (char *)malloc(val_len + 1);
 
-    memcpy(key_val, key_f, len);
-    key_val[len] = 0;
+    memcpy(key_val, key_f, val_len);
+    key_val[val_len] = 0;
 
     free(key2search);
 

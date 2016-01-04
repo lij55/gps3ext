@@ -65,8 +65,24 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         const char *p_name = "s3";
         char *url = EXTPROTOCOL_GET_URL(fcinfo);
 
-        myData = CreateExtWrapper(
-            "http://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/");
+        // truncate url
+        const char *delimiter = " ";
+        char *options = strstr(url_with_options, delimiter);
+        int url_len = strlen(url_with_options) - strlen(options);
+        char url[url_len + 1];
+        memcpy(url, url_with_options, url_len);
+        url[url_len] = 0;
+
+        s3ext_secret = get_opt_s3(options, "secret");
+        s3ext_accessid = get_opt_s3(options, "accessid");
+
+        s3ext_segid = atoi(get_opt_s3(options, "segid"));
+        s3ext_segnum = atoi(get_opt_s3(options, "segnum"));
+
+        s3ext_chunksize = atoi(get_opt_s3(options, "chunksize"));
+        s3ext_threadnum = atoi(get_opt_s3(options, "threadnum"));
+
+        myData = CreateExtWrapper(url);
 
         S3DEBUG("%d myData: 0x%x\n", __LINE__, myData);
 
@@ -155,8 +171,7 @@ Datum s3_export(PG_FUNCTION_ARGS) {
         s3ext_chunksize = atoi(get_opt_s3(options, "chunksize"));
         s3ext_threadnum = atoi(get_opt_s3(options, "threadnum"));
 
-        myData = CreateExtWrapper(
-            "http://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/");
+        myData = CreateExtWrapper(url);
 
         // S3DEBUG("%d myData: 0x%x\n", __LINE__, myData);
 
