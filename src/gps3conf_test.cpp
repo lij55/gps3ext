@@ -14,12 +14,12 @@ int s3ext_threadnum;
 TEST(Config, basic) {
     setenv("MASTER_DATA_DIRECTORY", "/tmp", 1);
     system("mkdir -p /tmp/s3");
-    system("echo [s3] > /tmp/s3/s3.conf");
-    system("echo secret = \\\"secret_test\\\" >> /tmp/s3/s3.conf");
-    system("echo accessid = \\\"accessid_test\\\" >> /tmp/s3/s3.conf");
-    system("echo threadnum = 6 >> /tmp/s3/s3.conf");
-    system("echo chunksize = 67108865 >> /tmp/s3/s3.conf");
-
+    system("cp -f test/s3.conf /tmp/s3/s3.conf");
+    // system("echo [s3] > /tmp/s3/s3.conf");
+    // system("echo secret = \\\"secret_test\\\" >> /tmp/s3/s3.conf");
+    // system("echo accessid = \\\"accessid_test\\\" >> /tmp/s3/s3.conf");
+    // system("echo threadnum = 6 >> /tmp/s3/s3.conf");
+    // system("echo chunksize = 67108865 >> /tmp/s3/s3.conf");
     InitConfig();
 
     EXPECT_STREQ(s3ext_secret.c_str(), "secret_test");

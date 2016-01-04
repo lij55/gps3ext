@@ -55,12 +55,8 @@ extern void InitLog();
 // not thread safe!!
 // Called only once.
 void InitConfig() {
-    int s3conf_loglevel = 1;
+    int s3conf_loglevel = EXT_WARNING;
     int s3conf_logtype = LOCAL_LOG;
-
-#ifdef DEBUGS3
-    InitLog();
-#endif
 
     bool ret = 0;
     stringstream fullpath;
@@ -70,15 +66,22 @@ void InitConfig() {
 
     Config *cfg = new Config(fullpath.str().c_str());
 
-    s3conf_accessid = cfg->Get("s3", "accessid", "AKIAIAFSMJUMQWXB2PUQ");
-    s3conf_secret =
-        cfg->Get("s3", "secret", "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");
+    s3conf_accessid = cfg->Get("default", "accessid", "AKIAIAFSMJUMQWXB2PUQ");
+    s3conf_secret = cfg->Get("default", "secret",
+                             "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");
 
-    ret &= cfg->Scan("s3", "threadnum", "%ld", &s3conf_threadnum);
-    ret &= cfg->Scan("s3", "chunksize", "%ld", &s3conf_chunksize);
+#ifdef DEBUGS3
+    s3conf_loglevel = EXT_DEBUG;
+    s3conf_logpath = cfg->Get("default", "logpath", "/tmp/.s3log.sock");
+    s3conf_logserverhost = cfg->Get("default", "logserverhost", "127.0.0.1");
+    s3conf_logserverport = 1111;
+#endif
+
+    ret &= cfg->Scan("default", "threadnum", "%ld", &s3conf_threadnum);
+    ret &= cfg->Scan("default", "chunksize", "%ld", &s3conf_chunksize);
 
     if (ret) {
-        printf("failed to get configrations\n");
+        fprintf(stderr, "failed to get configrations\n");
     }
 
     s3ext_secret = s3conf_secret;
@@ -87,6 +90,7 @@ void InitConfig() {
 #ifdef DEBUGS3
     s3ext_segid = 0;
     s3ext_segnum = 1;
+    InitLog();
 #else
     s3ext_segid = GpIdentity.segindex;
     s3ext_segnum = GpIdentity.numsegments;

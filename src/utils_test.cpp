@@ -145,3 +145,36 @@ TEST(databuffer, simple) {
     EXPECT_EQ(pdata->append(TEST_STRING, strlen(TEST_STRING)), 42);
     EXPECT_EQ(pdata->append(TEST_STRING, strlen(TEST_STRING)), 0);
 }
+
+TEST(utils, Config) {
+    Config c("test/s3.conf");
+    EXPECT_STREQ(c.Get("configtest", "config1", "aaaaaa"), "abcdefg");
+    EXPECT_STREQ(c.Get("configtest", "config2", "tttt"), "12345");
+    EXPECT_STREQ(c.Get("configtest", "config3", "tttt"), "aaaaa");
+    EXPECT_STREQ(c.Get("configtest", "config4", "tttt"), "123");
+    EXPECT_STREQ(c.Get("configtest", "config5", "tttt"), "tttt");
+    EXPECT_STREQ(c.Get("configtest", "config6", "tttt"), "tttt");
+    EXPECT_STREQ(c.Get("configtest", "config7", "xx"), "xx");
+
+    EXPECT_STREQ(c.Get("configtest", NULL, "xx"), "xx");
+    EXPECT_EQ(c.Get("configtest", "config7", NULL), (void *)NULL);
+
+    EXPECT_STREQ(c.Get("configtest", "", "xx"), "xx");
+
+    uint32_t value = 0;
+    EXPECT_TRUE(c.Scan("configtest", "config2", "%ul", &value));
+    EXPECT_EQ(value, 12345);
+
+    EXPECT_TRUE(c.Scan("configtest", "config4", "%ul", &value));
+    EXPECT_EQ(value, 123);
+
+    EXPECT_FALSE(c.Scan("configtest", "config7", "%ul", &value));
+    EXPECT_FALSE(c.Scan(NULL, "config7", "%ul", &value));
+    EXPECT_FALSE(c.Scan("configtest", NULL, "%ul", &value));
+
+    EXPECT_FALSE(c.Scan("configtest", "config5", "%ul", &value));
+
+    char str[128];
+    EXPECT_TRUE(c.Scan("configtest", "config3", "%s", str));
+    EXPECT_STREQ(str, "aaaaa");
+}

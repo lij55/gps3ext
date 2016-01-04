@@ -3,6 +3,7 @@
 *.lo
 *.o
 *.obj
+core.*
 
 # Precompiled Headers
 *.gch
@@ -46,3 +47,4 @@ core
 *.gcov
 *.gcda
 *.gcno
+s3test

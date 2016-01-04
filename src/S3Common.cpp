@@ -228,7 +228,20 @@ Config &GetGlobalS3Config() {
 }
 
 char *get_opt_s3(const char *url, const char *key) {
+    const char *key_f;
+    const char *key_tailing;
+    char *key_val;
+    int val_len;
+
+    if (!url || !key) {
+        return NULL;
+    }
+
     char *key2search = (char *)malloc(strlen(key) + 3);
+    if (!key2search) {
+        return NULL;
+    }
+
     int key_len = strlen(key);
 
     key2search[0] = ' ';
@@ -236,15 +249,36 @@ char *get_opt_s3(const char *url, const char *key) {
     key2search[key_len + 1] = '=';
     key2search[key_len + 2] = 0;
 
+    // printf("key2search=%s\n", key2search);
     const char *delimiter = " ";
     const char *options = strstr(url, delimiter);
+    if (!options) {  // no options string
+        goto FAIL;
+    }
+    key_f = strstr(options, key2search);
+    if (key_f == NULL) {
+        goto FAIL;
+    }
 
-    const char *key_f = strstr(options, key2search) + strlen(key2search);
-    const char *key_tailing = strstr(key_f, delimiter);
-    // strlen(strstr(key_f, delimiter)) will be zero if key_tailing is NULL,
-    // still works
-    int val_len = strlen(key_f) - strlen(strstr(key_f, delimiter));
-    char *key_val = (char *)malloc(val_len + 1);
+    key_f += strlen(key2search);
+    if (*key_f == ' ') {
+        goto FAIL;
+    }
+    // printf("key_f=%s\n", key_f);
+
+    key_tailing = strstr(key_f, delimiter);
+    // printf("key_tailing=%s\n", key_tailing);
+    val_len = 0;
+    if (key_tailing) {
+        val_len = strlen(key_f) - strlen(key_tailing);
+    } else {
+        val_len = strlen(key_f);
+    }
+
+    key_val = (char *)malloc(val_len + 1);
+    if (!key_val) {
+        goto FAIL;
+    }
 
     memcpy(key_val, key_f, val_len);
     key_val[val_len] = 0;
@@ -252,4 +286,9 @@ char *get_opt_s3(const char *url, const char *key) {
     free(key2search);
 
     return key_val;
+FAIL:
+    if (!key2search) {
+        free(key2search);
+    }
+    return NULL;
 }

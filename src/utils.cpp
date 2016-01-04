@@ -258,6 +258,8 @@ Config::~Config() {
 const char *Config::Get(const char *sec, const char *key,
                         const char *defaultvalue) {
     const char *ret = defaultvalue;
+    if (!key || !sec) return ret;
+
     if (this->_conf) {
         const char *tmp = ini_get(this->_conf, sec, key);
         if (tmp) ret = tmp;
@@ -267,6 +269,8 @@ const char *Config::Get(const char *sec, const char *key,
 
 bool Config::Scan(const char *sec, const char *key, const char *scanfmt,
                   void *dst) {
+    if (!key || !sec) return false;
+
     if (this->_conf) {
         return ini_sget(this->_conf, sec, key, scanfmt, dst);
     }

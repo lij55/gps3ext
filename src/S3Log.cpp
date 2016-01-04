@@ -28,8 +28,6 @@ using std::make_shared;
 #include "S3Log.h"
 #include "gps3conf.h"
 
-#define SOCKPATH "/tmp/.s3log.sock"
-
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX 108
 #endif
@@ -90,7 +88,8 @@ void InitLog() {
         /* start with a clean address structure */
         memset(&s3conf_logserverpath, 0, sizeof(struct sockaddr_un));
         s3conf_logserverpath.sun_family = AF_UNIX;
-        snprintf(s3conf_logserverpath.sun_path, UNIX_PATH_MAX, SOCKPATH);
+        snprintf(s3conf_logserverpath.sun_path, UNIX_PATH_MAX,
+                 s3conf_logpath.c_str());
 
         s3conf_logsock_udp = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
         if (s3conf_logsock_udp < 0) {
@@ -99,11 +98,8 @@ void InitLog() {
 
         memset(&s3conf_logserveraddr, 0, sizeof(struct sockaddr_in));
         s3conf_logserveraddr.sin_family = AF_INET;
-        s3conf_logserveraddr.sin_port = htons(1111);
-        inet_aton("127.0.0.1", &s3conf_logserveraddr.sin_addr);
-
-        s3conf_logtype = REMOTE_LOG;
-        s3conf_loglevel = EXT_DEBUG;
+        s3conf_logserveraddr.sin_port = htons(s3conf_logserverport);
+        inet_aton(s3conf_logserverhost.c_str(), &s3conf_logserveraddr.sin_addr);
 
         loginited = true;
     }
