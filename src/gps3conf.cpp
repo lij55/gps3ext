@@ -84,8 +84,13 @@ void InitConfig() {
     s3ext_secret = s3conf_secret;
     s3ext_accessid = s3conf_accessid;
 
+#ifdef DEBUGS3
+    s3ext_segid = 0;
+    s3ext_segnum = 1;
+#else
     s3ext_segid = GpIdentity.segindex;
     s3ext_segnum = GpIdentity.numsegments;
+#endif
 
     s3ext_threadnum = s3conf_threadnum;
     s3ext_chunksize = s3conf_chunksize;

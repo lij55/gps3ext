@@ -32,6 +32,15 @@ Datum s3_import(PG_FUNCTION_ARGS);
 Datum s3_validate_urls(PG_FUNCTION_ARGS);
 }
 
+string s3ext_secret;
+string s3ext_accessid;
+
+int s3ext_segid = -1;
+int s3ext_segnum = -1;
+
+int s3ext_chunksize = -1;
+int s3ext_threadnum = -1;
+
 /*
  * Import data into GPDB.
  */
