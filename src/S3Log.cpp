@@ -33,7 +33,9 @@ using std::make_shared;
 #endif
 
 #ifndef DEBUGS3
+extern "C" {
 #include "elog.h"
+}
 #endif
 
 uint8_t loglevel() { return s3ext_loglevel; }
@@ -53,7 +55,9 @@ void _LogMessage(const char* fmt, va_list args) {
 void _send_to_local(const char* fmt, va_list args) {
     char buf[1024];
     int len = vsnprintf(buf, 1024, fmt, args);
-    buf[len - 1] = 0;
+    if(len >= 1024)
+        len = 1023;
+    buf[len] = 0;
     sendto(s3ext_logsock_local, buf, len, 0,
            (struct sockaddr*)&s3ext_logserverpath, sizeof(struct sockaddr_un));
 }
@@ -61,7 +65,9 @@ void _send_to_local(const char* fmt, va_list args) {
 void _send_to_remote(const char* fmt, va_list args) {
     char buf[1024];
     int len = vsnprintf(buf, 1024, fmt, args);
-    buf[len - 1] = 0;
+    if(len >= 1024)
+        len = 1023;
+    buf[len] = 0;
     sendto(s3ext_logsock_udp, buf, len, 0,
            (struct sockaddr*)&s3ext_logserveraddr, sizeof(struct sockaddr_in));
 }

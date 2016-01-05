@@ -117,7 +117,7 @@ uint64_t BlockingBuffer::Fill() {
         if (leftlen != 0) {
             readlen = this->fetchdata(offset, this->bufferdata + this->realsize,
                                       leftlen);
-            S3DEBUG("return %lld from libcurl\n", readlen);
+            S3DEBUG("return %lld from libcurl", readlen);
         } else {
             readlen = 0;  // EOF
         }
@@ -125,7 +125,7 @@ uint64_t BlockingBuffer::Fill() {
             // if (this->realsize == 0) {
             this->eof = true;
             //}
-            S3DEBUG("reach end of file\n");
+            S3DEBUG("reach end of file");
             break;
         } else if (readlen == -1) {  // Error, network error or sth.
             // perror, retry
@@ -171,7 +171,7 @@ void *DownloadThreadfunc(void *data) {
     // assert offset > 0
     do {
         filled_size = buffer->Fill();
-        S3DEBUG("Fillsize is %lld\n", filled_size);
+        S3DEBUG("Fillsize is %lld", filled_size);
         if (buffer->EndOfFile()) break;
         if (filled_size == -1) {  // Error
             // retry?
@@ -181,7 +181,7 @@ void *DownloadThreadfunc(void *data) {
                 continue;
         }
     } while (1);
-    S3DEBUG("quit download\n");
+    S3DEBUG("quit download");
     return NULL;
 }
 
@@ -193,12 +193,12 @@ Downloader::Downloader(uint8_t part_num) : num(part_num) {
 bool Downloader::init(const char *url, uint64_t size, uint64_t chunksize,
                       S3Credential *pcred) {
     this->o = new OffsetMgr(size, chunksize);
-    S3DEBUG("chunksize is %d\n", chunksize);
+    S3DEBUG("chunksize is %d", chunksize);
     for (int i = 0; i < this->num; i++) {
         this->buffers[i] = BlockingBuffer::CreateBuffer(
             url, o, pcred);  // decide buffer according to url
         if (!this->buffers[i]->Init()) {
-            S3ERROR("Blocking buffer init fail\n");
+            S3ERROR("Blocking buffer init fail");
         }
         pthread_create(&this->threads[i], NULL, DownloadThreadfunc,
                        this->buffers[i]);
@@ -235,7 +235,7 @@ RETRY:
     }
     len = tmplen;
 
-    S3DEBUG("in downloader %lld, %lld, %lld\n", filelen, this->readlen, len);
+    S3DEBUG("in downloader %lld, %lld, %lld", filelen, this->readlen, len);
     return true;
 }
 
@@ -320,7 +320,7 @@ RETRY:
 
     CURLcode res = curl_easy_perform(curl_handle);
     if (res != CURLE_OK) {
-        fprintf(stderr, "curl_easy_perform() failed: %s\n",
+        fprintf(stderr, "curl_easy_perform() failed: %s",
                 curl_easy_strerror(res));
         bi.len = -1;
     } else {
@@ -407,7 +407,7 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
     CURLcode res = curl_easy_perform(curl);
 
     if (res != CURLE_OK)
-        fprintf(stderr, "curl_easy_perform() failed: %s\n",
+        fprintf(stderr, "curl_easy_perform() failed: %s",
                 curl_easy_strerror(res));
     xmlParseChunk(xml.ctxt, "", 0, 1);
     curl_slist_free_all(chunk);
@@ -520,13 +520,13 @@ ListBucketResult *ListBucket_FakeHTTP(const char *host, const char *bucket) {
     curl_easy_cleanup(curl);
 
     if (res != CURLE_OK) {
-        fprintf(stderr, "curl_easy_perform() failed: %s\n",
+        fprintf(stderr, "curl_easy_perform() failed: %s",
                 curl_easy_strerror(res));
         return NULL;
     }
     xmlParseChunk(xml.ctxt, "", 0, 1);
     if (!xml.ctxt) {
-        printf("xmlParseChunk failed\n");
+        printf("xmlParseChunk failed");
         return NULL;
     }
 

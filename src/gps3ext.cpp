@@ -49,7 +49,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
     /* Get our internal description of the protocol */
     myData = (S3ExtBase *)EXTPROTOCOL_GET_USER_CTX(fcinfo);
-    // S3DEBUG("%d myData: 0x%x\n", __LINE__, myData);
+
     if (EXTPROTOCOL_IS_LAST_CALL(fcinfo)) {
         if (!myData->Destroy()) {
             ereport(ERROR, (0, errmsg("Cleanup S3 extention failed")));
@@ -60,7 +60,6 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
     if (myData == NULL) {
         /* first call. do any desired init */
-        InitLog();
 
         const char *p_name = "s3";
         char *url_with_options = EXTPROTOCOL_GET_URL(fcinfo);
@@ -87,7 +86,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
             ClearConfig();
             free(config_path);
         }
-
+        InitLog();
         if (s3ext_accessid == "") {
             ereport(ERROR, (0, errmsg("access id is empty")));
         }
@@ -101,7 +100,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         }
 
         myData = CreateExtWrapper(url);
-
+        S3DEBUG("segid is %d, segnum is %d", s3ext_segid, s3ext_segnum);
         if (!myData ||
             !myData->Init(s3ext_segid, s3ext_segnum, s3ext_chunksize)) {
             if (myData) delete myData;
@@ -131,7 +130,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         nread = data_len;
         if (!myData->TransferData(data, nread))
             ereport(ERROR, (0, errmsg("s3_import: could not read data")));
-        S3DEBUG("read %d data from S3\n", nread);
+        S3DEBUG("read %d data from S3", nread);
     }
 
     PG_RETURN_INT32((int)nread);

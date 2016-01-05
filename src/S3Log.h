@@ -4,6 +4,8 @@
 #include <cstdarg>
 #include <cstdio>
 
+#include <pthread.h>
+
 // log level
 enum LOGLEVEL { EXT_FATAL, EXT_ERROR, EXT_WARNING, EXT_INFO, EXT_DEBUG };
 
@@ -23,8 +25,8 @@ LOGLEVEL getLogLevel(const char* v);
 
 #define PRINTFUNCTION(i, format, ...) LogMessage(i, format, __VA_ARGS__)
 
-#define LOG_FMT "[%s]%s:%d  "
-#define LOG_ARGS(LOGLEVEL) LOGLEVEL, __FILE__, __LINE__
+#define LOG_FMT "[%s](%0X)%s:%d  "
+#define LOG_ARGS(LOGLEVELSTR) LOGLEVELSTR, pthread_self(), __FILE__, __LINE__
 #define NEWLINE "\n"
 
 #define S3DEBUG(message, args...) \

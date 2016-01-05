@@ -53,13 +53,14 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
 
     // Validate url first
     if (!this->ValidateURL()) {
-        S3ERROR("validate url fail %s\n", this->url.c_str());
+        S3ERROR("validate url fail %s", this->url.c_str());
+        return false;
     }
 
     // TODO: As separated function for generating url
     stringstream sstr;
     sstr << "s3-" << this->region << ".amazonaws.com";
-    S3DEBUG("%s\n", sstr.str().c_str());
+    S3DEBUG("host url is %s", sstr.str().c_str());
 
     this->keylist = ListBucket(sstr.str().c_str(), this->bucket.c_str(),
                                this->prefix.c_str(), this->cred);
@@ -67,22 +68,21 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
     if (!this->keylist) {
         return false;
     }
-
+    S3DEBUG("file list size is %d", this->keylist->contents.size());
     this->getNextDownloader();
 
     return this->filedownloader ? true : false;
 }
 
 void S3Reader::getNextDownloader() {
-    S3DEBUG("download next file, contentindex = %d\n", this->contentindex);
-
     if (this->filedownloader) {  // reset old downloader
         filedownloader->destroy();
         delete this->filedownloader;
         this->filedownloader = NULL;
     }
 
-    if (this->contentindex >= this->keylist->contents.size()) {
+    if (this->contentindex >= this->keylist->contents.size() ) {
+        S3DEBUG("no more file to download");
         return;
     }
     this->filedownloader = new Downloader(this->concurrent_num);
@@ -93,7 +93,7 @@ void S3Reader::getNextDownloader() {
     }
     BucketContent *c = this->keylist->contents[this->contentindex];
     string keyurl = this->getKeyURL(c->Key());
-    // S3DEBUG("%s:%lld\n", keyurl.c_str(), c->Size());
+    S3DEBUG("%s:%lld", keyurl.c_str(), c->Size());
 
     if (!filedownloader->init(keyurl.c_str(), c->Size(), this->chunksize,
                               &this->cred)) {
@@ -121,18 +121,18 @@ bool S3Reader::TransferData(char *data, size_t &len) {
     uint64_t buflen;
 RETRY:
     buflen = len;
-    // S3DEBUG("getlen is %d\n", len);
+    // S3DEBUG("getlen is %d", len);
     bool result = filedownloader->get(data, buflen);
     if (!result) {  // read fail
-        S3ERROR("get data from filedownloader fail\n");
+        S3ERROR("get data from filedownloader fail");
         return false;
     }
-    // S3DEBUG("getlen is %lld\n", buflen);
+    // S3DEBUG("getlen is %lld", buflen);
     if (buflen == 0) {
         // change to next downloader
         this->getNextDownloader();
         if (this->filedownloader) {  // download next file
-            S3INFO("retry\n");
+            S3INFO("retry");
             goto RETRY;
         }
     }
@@ -184,9 +184,11 @@ bool S3ExtBase::ValidateURL() {
 
     this->prefix = url.substr(iend + 1, url.length() - iend - 1);
 
+    /*
     if (url.back() != '/') {
         return false;
     }
+    */
     return true;
 }
 
@@ -196,14 +198,14 @@ bool S3Protocol_t::Write(char *data, size_t &len) {
         // not initialized?
         return false;
     }
-    S3DEBUG("write_len is %d\n", len);
+    S3DEBUG("write_len is %d", len);
 
     bool result = fileuploader->write(data, len);
     if (!result) {
-        S3DEBUG("write data via fileuploader fail\n");
+        S3DEBUG("write data via fileuploader fail");
         return false;
     }
-    S3DEBUG("write_len is %lld\n", len);
+    S3DEBUG("write_len is %ld", len);
     return true;
 }
 */
