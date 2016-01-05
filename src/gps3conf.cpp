@@ -27,79 +27,92 @@
 using std::string;
 using std::stringstream;
 
-int s3conf_logsock_local = -1;
-int s3conf_logsock_udp = -1;
+// configurable parameters
+int32_t s3ext_loglevel = -1;
+int32_t s3ext_threadnum = 5;
+int32_t s3ext_chunksize = 64 * 1024 * 1024;
+int32_t s3ext_logtype = -1;
+int32_t s3ext_logserverport = -1;
 
-int s3conf_loglevel = -1;
-int s3conf_threadnum = 5;
-int s3conf_chunksize = 64 * 1024 * 1024;
-int s3conf_segid = -1;
-int s3conf_segnum = -1;
-int s3conf_logtype = -1;
-int s3conf_logserverport = -1;
+string s3ext_logserverhost;
+string s3ext_logpath;
+string s3ext_accessid;
+string s3ext_secret;
+string s3ext_token;
 
-string s3conf_logserverhost;
-string s3conf_logpath;
-string s3conf_accessid;
-string s3conf_secret;
-string s3conf_token;
-string s3conf_config_path;
+// global variables
+int32_t s3ext_segid = -1;
+int32_t s3ext_segnum = -1;
 
-struct sockaddr_in s3conf_logserveraddr;
-struct sockaddr_un s3conf_logserverpath;
-
-#ifdef DEBUGS3
-extern void InitLog();
-#endif
+string s3ext_config_path;
+struct sockaddr_in s3ext_logserveraddr;
+struct sockaddr_un s3ext_logserverpath;
+int32_t s3ext_logsock_local = -1;
+int32_t s3ext_logsock_udp = -1;
+Config* s3cfg = NULL;
 
 // not thread safe!!
 // Called only once.
-void InitConfig() {
-    int s3conf_loglevel = EXT_WARNING;
-    int s3conf_logtype = LOCAL_LOG;
+bool InitConfig(const char* conf_path,
+                const char* section /*unused currently*/) {
+    if (!conf_path) {
+        // empty path, log error
+        return false;
+    }
 
+    if (!s3cfg) {
+        s3cfg = new Config(conf_path);
+        if (!s3cfg) {
+            // create s3cfg fail
+            // log error
+            return false;
+        }
+    }
+
+    Config* cfg = s3cfg;
     bool ret = 0;
-    stringstream fullpath;
-    const char *env_d = std::getenv("MASTER_DATA_DIRECTORY");
+    string content;
+    content = cfg->Get("default", "loglevel", "ERROR");
+    s3ext_loglevel = getLogLevel(content.c_str());
 
-    fullpath << env_d << "/s3/s3.conf";
+    content = cfg->Get("default", "logtype", "INTERNAL");
+    s3ext_logtype = getLogType(content.c_str());
 
-    Config *cfg = new Config(fullpath.str().c_str());
-
-    s3conf_accessid = cfg->Get("default", "accessid", "AKIAIAFSMJUMQWXB2PUQ");
-    s3conf_secret = cfg->Get("default", "secret",
-                             "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");
+    s3ext_accessid = cfg->Get("default", "accessid", "");
+    s3ext_secret = cfg->Get("default", "secret", "");
+    s3ext_token = cfg->Get("default", "token", "");
 
 #ifdef DEBUGS3
-    s3conf_loglevel = EXT_DEBUG;
-    s3conf_logpath = cfg->Get("default", "logpath", "/tmp/.s3log.sock");
-    s3conf_logserverhost = cfg->Get("default", "logserverhost", "127.0.0.1");
-    s3conf_logserverport = 1111;
+// s3ext_loglevel = EXT_DEBUG;
+// s3ext_logtype = LOCAL_LOG;
 #endif
 
-    ret &= cfg->Scan("default", "threadnum", "%ld", &s3conf_threadnum);
-    ret &= cfg->Scan("default", "chunksize", "%ld", &s3conf_chunksize);
+    s3ext_logpath = cfg->Get("default", "logpath", "/tmp/.s3log.sock");
+    s3ext_logserverhost = cfg->Get("default", "logserverhost", "127.0.0.1");
+    ret = cfg->Scan("default", "logserverport", "%d", &s3ext_logserverport);
+    if (!ret) s3ext_logserverport = 1111;
+    ret = 0;
+
+    ret &= cfg->Scan("default", "threadnum", "%d", &s3ext_threadnum);
+    ret &= cfg->Scan("default", "chunksize", "%d", &s3ext_chunksize);
 
     if (ret) {
         fprintf(stderr, "failed to get configrations\n");
     }
 
-    s3ext_secret = s3conf_secret;
-    s3ext_accessid = s3conf_accessid;
-
 #ifdef DEBUGS3
     s3ext_segid = 0;
     s3ext_segnum = 1;
-    InitLog();
 #else
     s3ext_segid = GpIdentity.segindex;
     s3ext_segnum = GpIdentity.numsegments;
 #endif
-
-    s3ext_threadnum = s3conf_threadnum;
-    s3ext_chunksize = s3conf_chunksize;
-
-    delete cfg;
+    return true;
 }
 
-void ClearConfig() {}
+void ClearConfig() {
+    if (s3cfg) {
+        delete s3cfg;
+        s3cfg = NULL;
+    }
+}

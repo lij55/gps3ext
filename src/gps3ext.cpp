@@ -18,6 +18,7 @@
 #include "utils.h"
 
 #include "gps3ext.h"
+#include "gps3conf.h"
 
 /* Do the module magic dance */
 
@@ -31,15 +32,6 @@ Datum s3_export(PG_FUNCTION_ARGS);
 Datum s3_import(PG_FUNCTION_ARGS);
 Datum s3_validate_urls(PG_FUNCTION_ARGS);
 }
-
-string s3ext_secret;
-string s3ext_accessid;
-
-int s3ext_segid = -1;
-int s3ext_segnum = -1;
-
-int s3ext_chunksize = -1;
-int s3ext_threadnum = -1;
 
 /*
  * Import data into GPDB.
@@ -67,10 +59,9 @@ Datum s3_import(PG_FUNCTION_ARGS) {
     }
 
     if (myData == NULL) {
-/* first call. do any desired init */
-#ifdef DEBUGS3
+        /* first call. do any desired init */
         InitLog();
-#endif
+
         const char *p_name = "s3";
         char *url_with_options = EXTPROTOCOL_GET_URL(fcinfo);
 
@@ -82,15 +73,34 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         memcpy(url, url_with_options, url_len);
         url[url_len] = 0;
 
-        s3ext_secret = get_opt_s3(options, "secret");
-        s3ext_accessid = get_opt_s3(options, "accessid");
+        char *config_path = get_opt_s3(options, "config");
+        if (!config_path) {  // no config path in url, use default value
+            config_path = strdup("s3/s3.conf");
+        }
 
-        s3ext_chunksize = atoi(get_opt_s3(options, "chunksize"));
-        s3ext_threadnum = atoi(get_opt_s3(options, "threadnum"));
+        bool result = InitConfig(config_path, NULL);
+        if (!result) {
+            free(config_path);
+            ereport(ERROR,
+                    (0, errmsg("can't find config file in %s", config_path)));
+        } else {
+            ClearConfig();
+            free(config_path);
+        }
+
+        if (s3ext_accessid == "") {
+            ereport(ERROR, (0, errmsg("access id is empty")));
+        }
+
+        if (s3ext_secret == "") {
+            ereport(ERROR, (0, errmsg("secret is empty")));
+        }
+
+        if ((s3ext_segnum == -1) || (s3ext_segid == -1)) {
+            ereport(ERROR, (0, errmsg("segment id is invalid")));
+        }
 
         myData = CreateExtWrapper(url);
-
-        S3DEBUG("%d myData: 0x%x\n", __LINE__, myData);
 
         if (!myData ||
             !myData->Init(s3ext_segid, s3ext_segnum, s3ext_chunksize)) {
@@ -116,7 +126,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
     data = EXTPROTOCOL_GET_DATABUF(fcinfo);
     data_len = EXTPROTOCOL_GET_DATALEN(fcinfo);
-    // S3DEBUG("%d myData: 0x%x\n", __LINE__, myData);
+
     if (data_len > 0) {
         nread = data_len;
         if (!myData->TransferData(data, nread))
@@ -130,80 +140,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 /*
  * Export data out of GPDB.
  */
-Datum s3_export(PG_FUNCTION_ARGS) {
-    S3ExtBase *myData;
-    char *data;
-    int data_len;
-    size_t nwrite = 0;
-
-    /* Must be called via the external table format manager */
-    if (!CALLED_AS_EXTPROTOCOL(fcinfo))
-        elog(ERROR,
-             "extprotocol_import: not called by external protocol manager");
-
-    /* Get our internal description of the protocol */
-    myData = (S3ExtBase *)EXTPROTOCOL_GET_USER_CTX(fcinfo);
-    // S3DEBUG("%d myData: 0x%x\n", __LINE__, myData);
-    if (EXTPROTOCOL_IS_LAST_CALL(fcinfo)) {
-        if (!myData->Destroy()) {
-            ereport(ERROR, (0, errmsg("Cleanup S3 extention failed")));
-        }
-        delete myData;
-        PG_RETURN_INT32(0);
-    }
-
-    if (myData == NULL) {
-/* first call. do any desired init */
-#ifdef DEBUGS3
-        InitLog();
-#endif
-        const char *p_name = "s3";
-        char *url_with_options = EXTPROTOCOL_GET_URL(fcinfo);
-
-        // truncate url
-        const char *delimiter = " ";
-        char *options = strstr(url_with_options, delimiter);
-        int url_len = strlen(url_with_options) - strlen(options);
-        char url[url_len + 1];
-        memcpy(url, url_with_options, url_len);
-        url[url_len] = 0;
-
-        s3ext_secret = get_opt_s3(options, "secret");
-        s3ext_accessid = get_opt_s3(options, "accessid");
-
-        s3ext_chunksize = atoi(get_opt_s3(options, "chunksize"));
-        s3ext_threadnum = atoi(get_opt_s3(options, "threadnum"));
-
-        myData = CreateExtWrapper(url);
-
-        // S3DEBUG("%d myData: 0x%x\n", __LINE__, myData);
-
-        if (!myData ||
-            !myData->Init(s3ext_segid, s3ext_segnum, s3ext_chunksize)) {
-            if (myData) delete myData;
-            ereport(ERROR, (0, errmsg("Init S3 extension fail")));
-        }
-
-        EXTPROTOCOL_SET_USER_CTX(fcinfo, myData);
-    }
-
-    /* =======================================================================
-     *                            DO THE EXPORT
-     * =======================================================================
-     */
-
-    data = EXTPROTOCOL_GET_DATABUF(fcinfo);
-    data_len = EXTPROTOCOL_GET_DATALEN(fcinfo);
-    S3DEBUG("%d myData: 0x%x\n", __LINE__, myData);
-    if (data_len > 0) {
-        nwrite = data_len;
-        if (!myData->TransferData(data, nwrite))
-            ereport(ERROR, (0, errmsg("s3_export: could not write data")));
-        S3DEBUG("write %d data from S3\n", nwrite);
-    }
-
-    PG_RETURN_INT32((int)nwrite);
-}
+Datum s3_export(PG_FUNCTION_ARGS) { PG_RETURN_INT32(0); }
 
 Datum s3_validate_urls(PG_FUNCTION_ARGS) {
     int nurls;

@@ -32,32 +32,45 @@ using std::make_shared;
 #define UNIX_PATH_MAX 108
 #endif
 
-uint8_t loglevel() { return s3conf_loglevel; }
+#ifndef DEBUGS3
+#include "elog.h"
+#endif
+
+uint8_t loglevel() { return s3ext_loglevel; }
 
 // fake implement
-void _LogMessage(const char* fmt, va_list args) { vfprintf(stderr, fmt, args); }
+void _LogMessage(const char* fmt, va_list args) { 
+    char buf[1024];
+    int len = vsnprintf(buf, 1024, fmt, args);
+    buf[len - 1] = 0;
+#ifdef DEBUGS3
+    fprintf(stderr, "%s\n", buf);
+#else
+    elog(19, "%s\n", buf);
+#endif
+}
 
 void _send_to_local(const char* fmt, va_list args) {
     char buf[1024];
     int len = vsnprintf(buf, 1024, fmt, args);
     buf[len - 1] = 0;
-    sendto(s3conf_logsock_local, buf, len, 0,
-           (struct sockaddr*)&s3conf_logserverpath, sizeof(struct sockaddr_un));
+    sendto(s3ext_logsock_local, buf, len, 0,
+           (struct sockaddr*)&s3ext_logserverpath, sizeof(struct sockaddr_un));
 }
 
 void _send_to_remote(const char* fmt, va_list args) {
     char buf[1024];
     int len = vsnprintf(buf, 1024, fmt, args);
     buf[len - 1] = 0;
-    sendto(s3conf_logsock_udp, buf, len, 0,
-           (struct sockaddr*)&s3conf_logserveraddr, sizeof(struct sockaddr_in));
+    sendto(s3ext_logsock_udp, buf, len, 0,
+           (struct sockaddr*)&s3ext_logserveraddr, sizeof(struct sockaddr_in));
 }
 
 void LogMessage(LOGLEVEL loglevel, const char* fmt, ...) {
-    if (loglevel > s3conf_loglevel) return;
+    if (loglevel > s3ext_loglevel) return;
     va_list args;
     va_start(args, fmt);
-    switch (s3conf_logtype) {
+    switch (s3ext_logtype) {
         case INTERNAL_LOG:
             _LogMessage(fmt, args);
             break;
@@ -76,49 +89,47 @@ void LogMessage(LOGLEVEL loglevel, const char* fmt, ...) {
     va_end(args);
 }
 
-#ifdef DEBUGS3
 static bool loginited = false;
 void InitLog() {
     if (!loginited) {
-        s3conf_logsock_local = socket(PF_UNIX, SOCK_DGRAM, 0);
-        if (s3conf_logsock_local < 0) {
+        s3ext_logsock_local = socket(PF_UNIX, SOCK_DGRAM, 0);
+        if (s3ext_logsock_local < 0) {
             perror("create socket fail");
         }
 
         /* start with a clean address structure */
-        memset(&s3conf_logserverpath, 0, sizeof(struct sockaddr_un));
-        s3conf_logserverpath.sun_family = AF_UNIX;
-        snprintf(s3conf_logserverpath.sun_path, UNIX_PATH_MAX,
-                 s3conf_logpath.c_str());
+        memset(&s3ext_logserverpath, 0, sizeof(struct sockaddr_un));
+        s3ext_logserverpath.sun_family = AF_UNIX;
+        snprintf(s3ext_logserverpath.sun_path, UNIX_PATH_MAX,
+                 s3ext_logpath.c_str());
 
-        s3conf_logsock_udp = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-        if (s3conf_logsock_udp < 0) {
+        s3ext_logsock_udp = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+        if (s3ext_logsock_udp < 0) {
             perror("create socket fail");
         }
 
-        memset(&s3conf_logserveraddr, 0, sizeof(struct sockaddr_in));
-        s3conf_logserveraddr.sin_family = AF_INET;
-        s3conf_logserveraddr.sin_port = htons(s3conf_logserverport);
-        inet_aton(s3conf_logserverhost.c_str(), &s3conf_logserveraddr.sin_addr);
+        memset(&s3ext_logserveraddr, 0, sizeof(struct sockaddr_in));
+        s3ext_logserveraddr.sin_family = AF_INET;
+        s3ext_logserveraddr.sin_port = htons(s3ext_logserverport);
+        inet_aton(s3ext_logserverhost.c_str(), &s3ext_logserveraddr.sin_addr);
 
         loginited = true;
     }
 }
-#endif
 
-#if 0
-int main() {
-
-    S3DEBUG("hello");
-	return 0;
+LOGTYPE getLogType(const char* v) {
+    if (!v) return STDERR_LOG;
+    if (strcmp(v, "REMOTE") == 0) return REMOTE_LOG;
+    if (strcmp(v, "LOCAL") == 0) return LOCAL_LOG;
+    if (strcmp(v, "INTERNAL") == 0) return INTERNAL_LOG;
+    return STDERR_LOG;
 }
 
-        si_logserver.sin_family = AF_INET;
-        si_logserver.sin_port = htons(1111);
-        if (inet_aton("127.0.0.1", &si_logserver.sin_addr) == 0) {  // error
-            // log error here
-            return;
-        }
-        logsock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-
-#endif
+LOGLEVEL getLogLevel(const char* v) {
+    if (!v) return EXT_FATAL;
+    if (strcmp(v, "DEBUG") == 0) return EXT_DEBUG;
+    if (strcmp(v, "WARNING") == 0) return EXT_WARNING;
+    if (strcmp(v, "INFO") == 0) return EXT_INFO;
+    if (strcmp(v, "ERROR") == 0) return EXT_ERROR;
+    return EXT_FATAL;
+}

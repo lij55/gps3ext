@@ -18,6 +18,9 @@ enum LOGTYPE {
 uint8_t loglevel();
 void LogMessage(LOGLEVEL level, const char* fmt, ...);
 
+LOGTYPE getLogType(const char* v);
+LOGLEVEL getLogLevel(const char* v);
+
 #define PRINTFUNCTION(i, format, ...) LogMessage(i, format, __VA_ARGS__)
 
 #define LOG_FMT "[%s]%s:%d  "
@@ -39,5 +42,7 @@ void LogMessage(LOGLEVEL level, const char* fmt, ...);
 #define S3ERROR(message, args...) \
     if (EXT_ERROR <= loglevel())  \
     PRINTFUNCTION(EXT_ERROR, LOG_FMT message NEWLINE, LOG_ARGS("E"), ##args)
+
+void InitLog();
 
 #endif  // __S3LOG__

@@ -2,32 +2,29 @@
 #include "gps3conf.cpp"
 #include <cstdlib>
 
-string s3ext_secret;
-string s3ext_accessid;
-
-int s3ext_segid;
-int s3ext_segnum;
-
-int s3ext_chunksize;
-int s3ext_threadnum;
-
 TEST(Config, basic) {
     setenv("MASTER_DATA_DIRECTORY", "/tmp", 1);
     system("mkdir -p /tmp/s3");
     system("cp -f test/s3.conf /tmp/s3/s3.conf");
-    // system("echo [s3] > /tmp/s3/s3.conf");
-    // system("echo secret = \\\"secret_test\\\" >> /tmp/s3/s3.conf");
-    // system("echo accessid = \\\"accessid_test\\\" >> /tmp/s3/s3.conf");
-    // system("echo threadnum = 6 >> /tmp/s3/s3.conf");
-    // system("echo chunksize = 67108865 >> /tmp/s3/s3.conf");
-    InitConfig();
 
-    EXPECT_STREQ(s3ext_secret.c_str(), "secret_test");
-    EXPECT_STREQ(s3ext_accessid.c_str(), "accessid_test");
+    InitConfig("/tmp/s3/s3.conf", NULL);
 
-    EXPECT_EQ(s3ext_segid, 0);
-    EXPECT_EQ(s3ext_segnum, 1);
+    EXPECT_STREQ("secret_test", s3ext_secret.c_str());
+    EXPECT_STREQ("accessid_test", s3ext_accessid.c_str());
+    EXPECT_STREQ("ABCDEFGabcdefg", s3ext_token.c_str());
 
-    EXPECT_EQ(s3ext_threadnum, 6);
-    EXPECT_EQ(s3ext_chunksize, 64 * 1024 * 1024 + 1);
+#ifdef DEBUGS3
+    EXPECT_EQ(0, s3ext_segid);
+    EXPECT_EQ(1, s3ext_segnum);
+#endif
+
+    EXPECT_EQ(6, s3ext_threadnum);
+    EXPECT_EQ(64 * 1024 * 1024 + 1, s3ext_chunksize);
+
+    EXPECT_EQ(EXT_DEBUG, s3ext_loglevel);
+    EXPECT_EQ(INTERNAL_LOG, s3ext_logtype);
+
+    EXPECT_EQ(1111, s3ext_logserverport);
+    EXPECT_STREQ("127.0.0.1", s3ext_logserverhost.c_str());
+    EXPECT_STREQ("'/tmp/abcde'", s3ext_logpath.c_str());
 }

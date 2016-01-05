@@ -12,8 +12,6 @@ S3ExtBase *CreateExtWrapper(const char *url) {
 }
 
 S3ExtBase::S3ExtBase(const char *url) {
-    InitConfig();
-
     this->url = url;
 
     // get following from config
@@ -164,8 +162,11 @@ bool S3ExtBase::ValidateURL() {
         // error
         return false;
     }
-
+    
     this->schema = url.substr(ibegin, iend);
+    if(this->schema == "s3") {
+        this->schema = "http";
+    }
 
     ibegin = url.find("-");
     iend = url.find(awsdomain);
