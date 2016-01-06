@@ -51,10 +51,12 @@ Datum s3_import(PG_FUNCTION_ARGS) {
     myData = (S3ExtBase *)EXTPROTOCOL_GET_USER_CTX(fcinfo);
 
     if (EXTPROTOCOL_IS_LAST_CALL(fcinfo)) {
-        if (!myData->Destroy()) {
-            ereport(ERROR, (0, errmsg("Cleanup S3 extention failed")));
+        if (myData) {
+            if (!myData->Destroy()) {
+                ereport(ERROR, (0, errmsg("Cleanup S3 extention failed")));
+            }
+            delete myData;
         }
-        delete myData;
         PG_RETURN_INT32(0);
     }
 
@@ -67,21 +69,24 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         // truncate url
         const char *delimiter = " ";
         char *options = strstr(url_with_options, delimiter);
-        int url_len = strlen(url_with_options) - strlen(options);
+        int url_len = strlen(url_with_options);
+        if (options) {
+            url_len = strlen(url_with_options) - strlen(options);
+        }
         char url[url_len + 1];
         memcpy(url, url_with_options, url_len);
         url[url_len] = 0;
 
         char *config_path = get_opt_s3(options, "config");
         if (!config_path) {  // no config path in url, use default value
-            config_path = strdup("s3/s3.conf");
+            config_path = strdup("./s3/s3.conf");
         }
 
         bool result = InitConfig(config_path, NULL);
         if (!result) {
-            free(config_path);
             ereport(ERROR,
                     (0, errmsg("can't find config file in %s", config_path)));
+            free(config_path);
         } else {
             ClearConfig();
             free(config_path);

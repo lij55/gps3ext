@@ -50,6 +50,10 @@ extern string s3ext_config_path;
 extern struct sockaddr_in s3ext_logserveraddr;
 extern struct sockaddr_un s3ext_logserverpath;
 
+// low speed timeout
+extern int s3ext_low_speed_limit;
+extern int s3ext_low_speed_time;
+
 // not thread safe!!
 // Called only once.
 bool InitConfig(const char* path, const char* section);

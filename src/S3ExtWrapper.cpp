@@ -65,7 +65,7 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
         return false;
     }
 
-    if(this->keylist->contents.size() == 0) {
+    if (this->keylist->contents.size() == 0) {
         S3ERROR("key list is empty");
         return false;
     }
@@ -83,7 +83,7 @@ void S3Reader::getNextDownloader() {
         this->filedownloader = NULL;
     }
 
-    if (this->contentindex >= this->keylist->contents.size() ) {
+    if (this->contentindex >= this->keylist->contents.size()) {
         S3DEBUG("no more file to download");
         return;
     }
@@ -102,6 +102,8 @@ void S3Reader::getNextDownloader() {
         delete this->filedownloader;
         this->filedownloader = NULL;
     } else {  // move to next file
+        // for now, every segment downloads its assigned files(mod)
+        // better to build a workqueue in case not all segments are available
         this->contentindex += this->segnum;
     }
     return;

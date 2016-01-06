@@ -30,6 +30,12 @@ using std::string;
 
 #include <iomanip>
 
+#ifndef DEBUGS3
+extern "C" {
+void write_log(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+}
+#endif
+
 bool gethttpnow(char datebuf[65]) {  //('D, d M Y H:i:s T')
     struct tm *tm_info;
     time_t t;
@@ -249,6 +255,11 @@ uint64_t DataBuffer::append(const char *buf, uint64_t len) {
 
 Config::Config(const char *filename) : _conf(NULL) {
     if (filename) this->_conf = ini_load(filename);
+    if (this->_conf == NULL) {
+#ifndef DEBUGS3
+        write_log("failed to load config file\n");
+#endif
+    }
 }
 
 Config::~Config() {

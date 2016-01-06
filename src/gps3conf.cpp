@@ -23,6 +23,12 @@
 
 //#include <cdb/cdbvars.h>
 
+#ifndef DEBUGS3
+extern "C" {
+void write_log(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
+}
+#endif
+
 #include <string>
 using std::string;
 using std::stringstream;
@@ -33,6 +39,9 @@ int32_t s3ext_threadnum = 5;
 int32_t s3ext_chunksize = 64 * 1024 * 1024;
 int32_t s3ext_logtype = -1;
 int32_t s3ext_logserverport = -1;
+
+int32_t s3ext_low_speed_limit = 1024;
+int32_t s3ext_low_speed_time = 60;
 
 string s3ext_logserverhost;
 string s3ext_logpath;
@@ -63,8 +72,11 @@ bool InitConfig(const char* conf_path,
     if (!s3cfg) {
         s3cfg = new Config(conf_path);
         if (!s3cfg) {
-            // create s3cfg fail
-            // log error
+// create s3cfg fail
+// log error
+#ifndef DEBUGS3
+            write_log("failed to parse config file\n");
+#endif
             return false;
         }
     }
@@ -103,10 +115,20 @@ bool InitConfig(const char* conf_path,
 
     ret = cfg->Scan("default", "chunksize", "%d", &s3ext_chunksize);
     if (!ret) {
-        S3INFO("failed to get chunksize, use default value %d", 64*1024*1024);
-        s3ext_chunksize = 64*1024*1024;
+        S3INFO("failed to get chunksize, use default value %d",
+               64 * 1024 * 1024);
+        s3ext_chunksize = 64 * 1024 * 1024;
     }
 
+    ret = cfg->Scan("default", "low_speed_limit", "%d", &s3ext_low_speed_limit);
+    if (!ret) {
+        s3ext_low_speed_limit = 1024;
+    }
+
+    ret = cfg->Scan("default", "low_speed_time", "%d", &s3ext_low_speed_time);
+    if (!ret) {
+        s3ext_low_speed_time = 60;
+    }
 
 #ifdef DEBUGS3
     s3ext_segid = 0;
