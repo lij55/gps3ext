@@ -163,9 +163,9 @@ bool S3ExtBase::ValidateURL() {
         // error
         return false;
     }
-    
+
     this->schema = url.substr(ibegin, iend);
-    if(this->schema == "s3") {
+    if (this->schema == "s3") {
         this->schema = "http";
     }
 
