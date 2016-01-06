@@ -8,6 +8,7 @@
 #include <libxml/tree.h>
 
 #include "utils.h"
+#include "S3Log.h"
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>

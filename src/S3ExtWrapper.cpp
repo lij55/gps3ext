@@ -66,8 +66,15 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
                                this->prefix.c_str(), this->cred);
 
     if (!this->keylist) {
+        S3ERROR("Can't get key list from bucket %s", this->bucket.c_str());
         return false;
     }
+
+    if(this->keylist->contents.size() == 0) {
+        S3ERROR("key list is empty");
+        return false;
+    }
+
     S3DEBUG("file list size is %d", this->keylist->contents.size());
     this->getNextDownloader();
 

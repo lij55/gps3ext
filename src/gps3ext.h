@@ -1,3 +1,5 @@
+#ifndef _GPS3EXT_H_
+#define _GPS3EXT_H_
 #include <string>
 
 // TODO include GpId from proper place
@@ -11,3 +13,5 @@ typedef struct GpId {
                        * a primary and its mirror have the same segIndex */
 } GpId;
 extern GpId GpIdentity;
+
+#endif

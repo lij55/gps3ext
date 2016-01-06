@@ -38,17 +38,18 @@ extern "C" {
 }
 #endif
 
-uint8_t loglevel() { return s3ext_loglevel; }
-
 // fake implement
 void _LogMessage(const char* fmt, va_list args) { 
     char buf[1024];
     int len = vsnprintf(buf, 1024, fmt, args);
-    buf[len - 1] = 0;
+    if(len >= 1024)
+        len = 1023;
+    buf[len] = 0;
 #ifdef DEBUGS3
     fprintf(stderr, "%s\n", buf);
 #else
-    elog(19, "%s\n", buf);
+    //elog(19, "%s\n", buf);
+    fprintf(stderr, "%s\n", buf);
 #endif
 }
 

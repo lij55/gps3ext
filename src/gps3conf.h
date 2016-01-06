@@ -1,4 +1,5 @@
 #include <string>
+using std::string;
 
 // local socket to send log
 extern int s3ext_logsock_local;
