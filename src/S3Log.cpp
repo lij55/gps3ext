@@ -34,7 +34,7 @@ using std::make_shared;
 
 #ifndef DEBUGS3
 extern "C" {
-#include "elog.h"
+void write_log(const char *fmt,...) __attribute__((format(printf, 1, 2)));
 }
 #endif
 
@@ -48,8 +48,7 @@ void _LogMessage(const char* fmt, va_list args) {
 #ifdef DEBUGS3
     fprintf(stderr, "%s\n", buf);
 #else
-    //elog(19, "%s\n", buf);
-    fprintf(stderr, "%s\n", buf);
+    write_log("%s", buf);
 #endif
 }
 

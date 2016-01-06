@@ -68,7 +68,7 @@ BlockingBuffer::~BlockingBuffer() {
 bool BlockingBuffer::Init() {
     this->bufferdata = (char *)malloc(this->bufcap);
     if (!this->bufferdata) {
-        S3ERROR("alloc error\n");
+        S3ERROR("allocate Buffer failed, not enough memory?");
         return false;
     }
     pthread_mutex_init(&this->stat_mutex, NULL);
@@ -134,6 +134,7 @@ uint64_t BlockingBuffer::Fill() {
             // Ensure status is still empty
             // this->status = BlockingBuffer::STATUS_READY;
             // pthread_cond_signal(&this->stat_cond);
+            S3ERROR("Download file failed");
             break;
         } else {  // > 0
             offset += readlen;
@@ -168,8 +169,7 @@ BlockingBuffer *BlockingBuffer::CreateBuffer(const char *url, OffsetMgr *o,
 void *DownloadThreadfunc(void *data) {
     BlockingBuffer *buffer = (BlockingBuffer *)data;
     size_t filled_size = 0;
-    // void *pp = (void *)pthread_self();
-    // assert offset > 0
+    S3INFO("Download thread start");
     do {
         filled_size = buffer->Fill();
         S3DEBUG("Fillsize is %lld", filled_size);
@@ -182,24 +182,45 @@ void *DownloadThreadfunc(void *data) {
                 continue;
         }
     } while (1);
-    S3DEBUG("quit download");
+    S3INFO("Download thread end");
     return NULL;
 }
 
 Downloader::Downloader(uint8_t part_num) : num(part_num) {
     this->threads = (pthread_t *)malloc(num * sizeof(pthread_t));
+    if(this->threads)
+        memset((void*)this->threads, 0, num * sizeof(pthread_t));
+    else {
+        S3ERROR("malloc thread fail. not enough memory");
+    }
+
     this->buffers = (BlockingBuffer **)malloc(num * sizeof(BlockingBuffer *));
+    if(this->buffers)
+        memset((void*)this->buffers, 0, num * sizeof(BlockingBuffer *));
+    else {
+        S3ERROR("malloc blocking buffer fail. not enough memory");
+    }
 }
 
 bool Downloader::init(const char *url, uint64_t size, uint64_t chunksize,
                       S3Credential *pcred) {
+
+    if(!this->threads || !this->buffers) {
+        return false;
+    }
+
     this->o = new OffsetMgr(size, chunksize);
-    S3DEBUG("chunksize is %d", chunksize);
+    if(!this->o) {
+        S3ERROR("Create offset manager fail, not enough memory?");
+        return false;
+    }
+
     for (int i = 0; i < this->num; i++) {
         this->buffers[i] = BlockingBuffer::CreateBuffer(
             url, o, pcred);  // decide buffer according to url
         if (!this->buffers[i]->Init()) {
             S3ERROR("Blocking buffer init fail");
+            return false;
         }
         pthread_create(&this->threads[i], NULL, DownloadThreadfunc,
                        this->buffers[i]);
@@ -224,7 +245,7 @@ RETRY:
     if (tmplen < len) {
         this->chunkcount++;
         if (buf->Error()) {
-            S3ERROR("buffer error");
+            S3ERROR("Error occur while downloading, skip");
             return false;
         }
     }
@@ -236,33 +257,38 @@ RETRY:
     }
     len = tmplen;
 
-    S3DEBUG("in downloader %lld, %lld, %lld", filelen, this->readlen, len);
+    S3DEBUG("get %lld, %lld / %lld", len, this->readlen, filelen);
     return true;
 }
 
 void Downloader::destroy() {
     // if error
     for (int i = 0; i < this->num; i++) {
-        pthread_cancel(this->threads[i]);
+        if(this->threads && this->threads[i])
+            pthread_cancel(this->threads[i]);
     }
     for (int i = 0; i < this->num; i++) {
-        pthread_join(this->threads[i], NULL);
-        delete this->buffers[i];
+        if(this->threads && this->threads[i])
+            pthread_join(this->threads[i], NULL);
+        if(this->buffers && this->buffers[i])
+            delete this->buffers[i];
     }
-    delete this->o;
+    if(this->o)
+        delete this->o;
 }
 
 Downloader::~Downloader() {
-    free(this->threads);
-    free(this->buffers);
+    if(this->threads)
+        free(this->threads);
+    if(this->buffers)
+        free(this->buffers);
 }
 
 static uint64_t WriterCallback(void *contents, uint64_t size, uint64_t nmemb,
                                void *userp) {
     uint64_t realsize = size * nmemb;
     Bufinfo *p = (Bufinfo *)userp;
-    // std::cout<<"in writer"<<std::endl;
-    // assert p->len + realsize < p->maxsize
+
     memcpy(p->buf + p->len, contents, realsize);
     p->len += realsize;
     return realsize;
@@ -271,14 +297,21 @@ static uint64_t WriterCallback(void *contents, uint64_t size, uint64_t nmemb,
 HTTPFetcher::HTTPFetcher(const char *url, OffsetMgr *o)
     : BlockingBuffer(url, o), urlparser(url) {
     this->curl = curl_easy_init();
-    // curl_easy_setopt(this->curl, CURLOPT_VERBOSE, 1L);
-    // curl_easy_setopt(curl, CURLOPT_PROXY, "127.0.0.1:8080");
-    curl_easy_setopt(this->curl, CURLOPT_WRITEFUNCTION, WriterCallback);
-    curl_easy_setopt(this->curl, CURLOPT_FORBID_REUSE, 1L);
-    this->AddHeaderField(HOST, urlparser.Host());
+    if(this->curl) {
+        // curl_easy_setopt(this->curl, CURLOPT_VERBOSE, 1L);
+        // curl_easy_setopt(curl, CURLOPT_PROXY, "127.0.0.1:8080");
+        curl_easy_setopt(this->curl, CURLOPT_WRITEFUNCTION, WriterCallback);
+        curl_easy_setopt(this->curl, CURLOPT_FORBID_REUSE, 1L);
+        this->AddHeaderField(HOST, urlparser.Host());
+    } else {
+        S3ERROR("Create curl instance fail, not enough memory?");
+    }
 }
 
-HTTPFetcher::~HTTPFetcher() { curl_easy_cleanup(this->curl); }
+HTTPFetcher::~HTTPFetcher() { 
+    if(this->curl)
+        curl_easy_cleanup(this->curl); 
+}
 
 bool HTTPFetcher::SetMethod(Method m) {
     this->method = m;
@@ -288,6 +321,7 @@ bool HTTPFetcher::SetMethod(Method m) {
 bool HTTPFetcher::AddHeaderField(HeaderField f, const char *v) {
     if (v == NULL) {
         // log warning
+        S3INFO("skip empty field for %s", GetFieldString(f));
         return false;
     }
     return this->headers.Add(f, v);
@@ -297,7 +331,10 @@ bool HTTPFetcher::AddHeaderField(HeaderField f, const char *v) {
 // read len data from offest
 uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
     if (len == 0) return 0;
-
+    if(!this->curl) {
+        S3ERROR("Can't fetch data without curl instance");
+        return 0;
+    }
 RETRY:
     Bufinfo bi;
     bi.buf = data;
@@ -313,7 +350,6 @@ RETRY:
 
     sprintf(rangebuf, "bytes=%" PRIu64 "-%" PRIu64, offset, offset + len - 1);
     this->AddHeaderField(RANGE, rangebuf);
-
     this->processheader();
 
     struct curl_slist *chunk = this->headers.GetList();
@@ -321,14 +357,14 @@ RETRY:
 
     CURLcode res = curl_easy_perform(curl_handle);
     if (res != CURLE_OK) {
-        fprintf(stderr, "curl_easy_perform() failed: %s",
+        S3ERROR("curl_easy_perform() failed: %s",
                 curl_easy_strerror(res));
         bi.len = -1;
     } else {
         curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &res);
         if (this->retry(res)) goto RETRY;
         if (!((res == 200) || (res == 206))) {
-            fprintf(stderr, "%.*s", (int)len, data);
+            S3ERROR("%.*s", (int)len, data);
             bi.len = -1;
         }
     }
@@ -367,6 +403,7 @@ BucketContent *CreateBucketContentItem(const char *key, uint64_t size) {
     if (!tmp) return NULL;
     BucketContent *ret = new BucketContent();
     if (!ret) {
+        S3ERROR("Can't create bucket list, not enough memory?");
         free((void *)tmp);
         return NULL;
     }
@@ -385,6 +422,7 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
         // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
     } else {
+        S3ERROR("Can't create curl instance, not enough memory?");
         return NULL;
     }
 
@@ -407,9 +445,10 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
 
     CURLcode res = curl_easy_perform(curl);
 
-    if (res != CURLE_OK)
-        fprintf(stderr, "curl_easy_perform() failed: %s",
+    if (res != CURLE_OK) {
+        S3Error("curl_easy_perform() failed: %s",
                 curl_easy_strerror(res));
+    }
     xmlParseChunk(xml.ctxt, "", 0, 1);
     curl_slist_free_all(chunk);
     curl_easy_cleanup(curl);
@@ -451,11 +490,15 @@ static bool extractContent(ListBucketResult *result, xmlNode *root_element) {
                 }
                 contNode = contNode->next;
             }
-            BucketContent *item = CreateBucketContentItem(key, size);
-            if (item)
-                result->contents.push_back(item);
-            else {
-                // log error here
+            if(size > 0) { // skip empty item
+                BucketContent *item = CreateBucketContentItem(key, size);
+                if (item)
+                    result->contents.push_back(item);
+                else {
+                    S3Error("Faild to create item for %s", key);
+                }
+            } else {
+                S3INFO("size of %s is %d, skip", key, size);
             }
         }
         cur = cur->next;
@@ -477,15 +520,20 @@ ListBucketResult *ListBucket(const char *host, const char *bucket,
     xmlParserCtxtPtr xmlcontext =
         DoGetXML(host, bucket, sstr.str().c_str(), cred);
     xmlNode *root_element = xmlDocGetRootElement(xmlcontext->myDoc);
-    if (!root_element) return NULL;
+    if (!root_element) {
+        S3ERROR("Parse returned xml of bucket list failed");
+        return NULL;
+    }
     ListBucketResult *result = new ListBucketResult();
 
     if (!result) {
         // allocate fail
+        S3ERROR("allocate bucket list result fail");
         xmlFreeParserCtxt(xmlcontext);
         return NULL;
     }
     if (!extractContent(result, root_element)) {
+        S3ERROR("extract key from bucket list fail");
         delete result;
         xmlFreeParserCtxt(xmlcontext);
         return NULL;
@@ -521,13 +569,13 @@ ListBucketResult *ListBucket_FakeHTTP(const char *host, const char *bucket) {
     curl_easy_cleanup(curl);
 
     if (res != CURLE_OK) {
-        fprintf(stderr, "curl_easy_perform() failed: %s",
+        S3ERROR("curl_easy_perform() failed: %s",
                 curl_easy_strerror(res));
         return NULL;
     }
     xmlParseChunk(xml.ctxt, "", 0, 1);
     if (!xml.ctxt) {
-        printf("xmlParseChunk failed");
+        S3ERROR("xmlParseChunk failed");
         return NULL;
     }
 

@@ -70,9 +70,9 @@ bool InitConfig(const char* conf_path,
     }
 
     Config* cfg = s3cfg;
-    bool ret = 0;
+    bool ret = false;
     string content;
-    content = cfg->Get("default", "loglevel", "ERROR");
+    content = cfg->Get("default", "loglevel", "INFO");
     s3ext_loglevel = getLogLevel(content.c_str());
 
     content = cfg->Get("default", "logtype", "INTERNAL");
@@ -89,16 +89,24 @@ bool InitConfig(const char* conf_path,
 
     s3ext_logpath = cfg->Get("default", "logpath", "/tmp/.s3log.sock");
     s3ext_logserverhost = cfg->Get("default", "logserverhost", "127.0.0.1");
+
     ret = cfg->Scan("default", "logserverport", "%d", &s3ext_logserverport);
-    if (!ret) s3ext_logserverport = 1111;
-    ret = 0;
-
-    ret &= cfg->Scan("default", "threadnum", "%d", &s3ext_threadnum);
-    ret &= cfg->Scan("default", "chunksize", "%d", &s3ext_chunksize);
-
-    if (ret) {
-        fprintf(stderr, "failed to get configrations\n");
+    if (!ret) {
+        s3ext_logserverport = 1111;
     }
+
+    ret = cfg->Scan("default", "threadnum", "%d", &s3ext_threadnum);
+    if (!ret) {
+        S3INFO("failed to get thread number, use default value 4");
+        s3ext_threadnum = 4;
+    }
+
+    ret = cfg->Scan("default", "chunksize", "%d", &s3ext_chunksize);
+    if (!ret) {
+        S3INFO("failed to get chunksize, use default value %d", 64*1024*1024);
+        s3ext_chunksize = 64*1024*1024;
+    }
+
 
 #ifdef DEBUGS3
     s3ext_segid = 0;

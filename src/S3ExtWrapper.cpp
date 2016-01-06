@@ -23,14 +23,8 @@ S3ExtBase::S3ExtBase(const char *url) {
 
     this->chunksize = s3ext_chunksize;
     this->concurrent_num = s3ext_threadnum;
-
-    // this->concurrent_num = 2;
-    // this->cred.secret = "oCTLHlu3qJ+lpBH/+JcIlnNuDebFObFNFeNvzBF0";
-    // this->cred.keyid = "AKIAIAFSMJUMQWXB2PUQ";
-
-    // this->segid = -1;
-    // this->segnum = -1;
-    // this->chunksize = -1;
+    S3INFO("Create %d thread for downloading", s3ext_chunksize);
+    S3INFO("File is splited to %d each", s3ext_threadnum;
 }
 
 S3ExtBase::~S3ExtBase() {}
@@ -75,7 +69,7 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
         return false;
     }
 
-    S3DEBUG("file list size is %d", this->keylist->contents.size());
+    S3INFO("%d files to download", this->keylist->contents.size());
     this->getNextDownloader();
 
     return this->filedownloader ? true : false;
@@ -100,7 +94,7 @@ void S3Reader::getNextDownloader() {
     }
     BucketContent *c = this->keylist->contents[this->contentindex];
     string keyurl = this->getKeyURL(c->Key());
-    S3DEBUG("%s:%lld", keyurl.c_str(), c->Size());
+    S3DEBUG("key: %s, size: %lld", keyurl.c_str(), c->Size());
 
     if (!filedownloader->init(keyurl.c_str(), c->Size(), this->chunksize,
                               &this->cred)) {
@@ -139,7 +133,7 @@ RETRY:
         // change to next downloader
         this->getNextDownloader();
         if (this->filedownloader) {  // download next file
-            S3INFO("retry");
+            S3INFO("Change to new file");
             goto RETRY;
         }
     }

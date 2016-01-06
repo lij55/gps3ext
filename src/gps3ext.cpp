@@ -100,7 +100,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         }
 
         myData = CreateExtWrapper(url);
-        S3DEBUG("segid is %d, segnum is %d", s3ext_segid, s3ext_segnum);
+
         if (!myData ||
             !myData->Init(s3ext_segid, s3ext_segnum, s3ext_chunksize)) {
             if (myData) delete myData;
@@ -130,7 +130,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         nread = data_len;
         if (!myData->TransferData(data, nread))
             ereport(ERROR, (0, errmsg("s3_import: could not read data")));
-        S3DEBUG("read %d data from S3", nread);
+        // S3DEBUG("read %d data from S3", nread);
     }
 
     PG_RETURN_INT32((int)nread);
