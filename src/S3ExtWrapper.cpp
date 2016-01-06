@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "gps3conf.h"
 #include "gps3ext.h"
+#include "S3Log.h"
 
 #include "sstream"
 using std::stringstream;
@@ -24,7 +25,7 @@ S3ExtBase::S3ExtBase(const char *url) {
     this->chunksize = s3ext_chunksize;
     this->concurrent_num = s3ext_threadnum;
     S3INFO("Create %d thread for downloading", s3ext_chunksize);
-    S3INFO("File is splited to %d each", s3ext_threadnum;
+    S3INFO("File is splited to %d each", s3ext_threadnum);
 }
 
 S3ExtBase::~S3ExtBase() {}

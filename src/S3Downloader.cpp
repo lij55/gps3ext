@@ -446,7 +446,7 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
     CURLcode res = curl_easy_perform(curl);
 
     if (res != CURLE_OK) {
-        S3Error("curl_easy_perform() failed: %s",
+        S3ERROR("curl_easy_perform() failed: %s",
                 curl_easy_strerror(res));
     }
     xmlParseChunk(xml.ctxt, "", 0, 1);
@@ -495,7 +495,7 @@ static bool extractContent(ListBucketResult *result, xmlNode *root_element) {
                 if (item)
                     result->contents.push_back(item);
                 else {
-                    S3Error("Faild to create item for %s", key);
+                    S3ERROR("Faild to create item for %s", key);
                 }
             } else {
                 S3INFO("size of %s is %d, skip", key, size);
