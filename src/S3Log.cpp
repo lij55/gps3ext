@@ -39,7 +39,7 @@ extern "C" {
 #endif
 
 // fake implement
-void _LogMessage(const char* fmt, va_list args) { 
+void _LogMessage(const char* fmt, va_list args) {
     char buf[1024];
     int len = vsnprintf(buf, 1024, fmt, args);
     if(len >= 1024)
