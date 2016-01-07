@@ -7,11 +7,7 @@
 #include <unistd.h>
 #include <cstdio>
 #include <cstdarg>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <sys/un.h>
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
@@ -41,7 +37,7 @@ void write_log(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
 // fake implement
 void _LogMessage(const char* fmt, va_list args) {
     char buf[1024];
-    int len = vsnprintf(buf, 1024, fmt, args);
+    int len = vsnprintf(buf, sizeof(buf), fmt, args);
     if (len >= 1024) len = 1023;
     buf[len] = 0;
 #ifdef DEBUGS3
@@ -53,7 +49,7 @@ void _LogMessage(const char* fmt, va_list args) {
 
 void _send_to_local(const char* fmt, va_list args) {
     char buf[1024];
-    int len = vsnprintf(buf, 1024, fmt, args);
+    int len = vsnprintf(buf, sizeof(buf), fmt, args);
     if (len >= 1024) len = 1023;
     buf[len] = 0;
     sendto(s3ext_logsock_local, buf, len, 0,
@@ -62,7 +58,7 @@ void _send_to_local(const char* fmt, va_list args) {
 
 void _send_to_remote(const char* fmt, va_list args) {
     char buf[1024];
-    int len = vsnprintf(buf, 1024, fmt, args);
+    int len = vsnprintf(buf, sizeof(buf), fmt, args);
     if (len >= 1024) len = 1023;
     buf[len] = 0;
     sendto(s3ext_logsock_udp, buf, len, 0,

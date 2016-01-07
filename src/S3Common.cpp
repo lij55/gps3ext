@@ -1,5 +1,4 @@
 #include "S3Common.h"
-
 #include "utils.h"
 
 #include <sstream>
@@ -9,10 +8,12 @@
 
 #include <iostream>
 #include <sstream>
+#include <string>
 #include <map>
 
 #include "gps3conf.h"
 
+using std::string;
 using std::stringstream;
 
 bool SignGETv2(HeaderContent *h, const char *path_with_query,

@@ -4,8 +4,10 @@
 #include "gps3ext.h"
 #include "S3Log.h"
 
-#include "sstream"
+#include <string>
+#include <sstream>
 using std::stringstream;
+using std::string;
 
 S3ExtBase *CreateExtWrapper(const char *url) {
     S3ExtBase *ret = new S3Reader(url);

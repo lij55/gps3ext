@@ -1,5 +1,6 @@
 #include <cstring>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <string>
@@ -7,11 +8,6 @@
 #include <unistd.h>
 #include <cstdio>
 #include <cstdarg>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sstream>
@@ -29,7 +25,6 @@ void write_log(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
 }
 #endif
 
-#include <string>
 using std::string;
 using std::stringstream;
 

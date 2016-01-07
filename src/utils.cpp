@@ -38,14 +38,14 @@ void write_log(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 #endif
 
 bool gethttpnow(char datebuf[65]) {  //('D, d M Y H:i:s T')
-    struct tm *tm_info;
+    struct tm tm_info;
     time_t t;
     if (!datebuf) {
         return false;
     }
     time(&t);
-    tm_info = localtime(&t);
-    strftime(datebuf, 64, "%a, %d %b %Y %H:%M:%S %z", tm_info);
+    localtime_r(&t, &tm_info);
+    strftime(datebuf, 64, "%a, %d %b %Y %H:%M:%S %z", &tm_info);
     return true;
 }
 
@@ -294,6 +294,7 @@ bool to_bool(std::string str) {
     if ((str == "yes") || (str == "true") || (str == "y") || (str == "t") ||
         (str == "1")) {
         return true;
-    } else
+    } else {
         return false;
+    }
 }

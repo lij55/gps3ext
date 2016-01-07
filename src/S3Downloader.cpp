@@ -92,8 +92,11 @@ uint64_t BlockingBuffer::Read(char *buf, uint64_t len) {
         this->readpos += len;  // not empty
     } else {                   // empty, reset everything
         this->readpos = 0;
-        if (this->status == BlockingBuffer::STATUS_READY)
+
+        if (this->status == BlockingBuffer::STATUS_READY) {
             this->status = BlockingBuffer::STATUS_EMPTY;
+        }
+
         if (!this->EndOfFile()) {
             this->nextpos = this->mgr->NextOffset();
             pthread_cond_signal(&this->stat_cond);
@@ -167,7 +170,7 @@ BlockingBuffer *BlockingBuffer::CreateBuffer(const char *url, OffsetMgr *o,
 }
 
 void *DownloadThreadfunc(void *data) {
-    BlockingBuffer *buffer = (BlockingBuffer *)data;
+    BlockingBuffer *buffer = reinterpret_cast<BlockingBuffer *>(data);
     size_t filled_size = 0;
     S3INFO("Download thread start");
     do {
@@ -178,8 +181,9 @@ void *DownloadThreadfunc(void *data) {
             // retry?
             if (buffer->Error()) {
                 break;
-            } else
+            } else {
                 continue;
+            }
         }
     } while (1);
     S3INFO("Download thread end");
@@ -281,7 +285,7 @@ Downloader::~Downloader() {
 static uint64_t WriterCallback(void *contents, uint64_t size, uint64_t nmemb,
                                void *userp) {
     uint64_t realsize = size * nmemb;
-    Bufinfo *p = (Bufinfo *)userp;
+    Bufinfo *p = reinterpret_cast<Bufinfo *>(userp);
 
     memcpy(p->buf + p->len, contents, realsize);
     p->len += realsize;
@@ -349,7 +353,7 @@ RETRY:
                      s3ext_low_speed_limit);
     curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_TIME, s3ext_low_speed_time);
 
-    sprintf(rangebuf, "bytes=%" PRIu64 "-%" PRIu64, offset, offset + len - 1);
+    snprintf(rangebuf, 128, "bytes=%" PRIu64 "-%" PRIu64, offset, offset + len - 1);
     this->AddHeaderField(RANGE, rangebuf);
     this->processheader();
 
@@ -394,10 +398,11 @@ bool S3Fetcher::processheader() {
 }
 
 bool S3Fetcher::retry(CURLcode c) {
-    if (c == 403)
+    if (c == 403) {
         return true;
-    else
+    } else {
         return false;
+    }
 }
 
 // CreateBucketContentItem
@@ -513,9 +518,9 @@ static bool extractContent(ListBucketResult *result, xmlNode *root_element) {
             }
             if (size > 0) {  // skip empty item
                 BucketContent *item = CreateBucketContentItem(key, size);
-                if (item)
+                if (item) {
                     result->contents.push_back(item);
-                else {
+                } else {
                     S3ERROR("Faild to create item for %s", key);
                 }
             } else {
@@ -610,7 +615,10 @@ ListBucketResult *ListBucket_FakeHTTP(const char *host, const char *bucket) {
     }
 
     xmlNode *root_element = xmlDocGetRootElement(xml.ctxt->myDoc);
-    if (!root_element) return NULL;
+    if (!root_element) {
+        S3ERROR("create xml node fail");
+        return NULL;
+    }
     ListBucketResult *result = new ListBucketResult();
     if (!result) {
         // allocate fail
