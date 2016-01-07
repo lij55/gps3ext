@@ -9,7 +9,7 @@
 bool gethttpnow(char datebuf[65]);
 
 bool lowercase(char* out, const char* in);
-void tolower(char* buf);
+void _tolower(char* buf);
 
 bool trim(char* out, const char* in, const char* trimed = " \t\r\n");
 
@@ -118,5 +118,7 @@ class Config {
    private:
     ini_t* _conf;
 };
+
+bool to_bool(std::string str);
 
 #endif  // _UTILFUNCTIONS_

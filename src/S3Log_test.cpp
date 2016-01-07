@@ -6,7 +6,7 @@ TEST(logger, simple) {
     system("cp -f test/s3.conf /tmp/s3/s3.conf");
     InitConfig("/tmp/s3/s3.conf", NULL);
     InitLog();
-    fprintf(stderr, "%d\n",s3ext_logtype);
+    fprintf(stderr, "%d\n", s3ext_logtype);
     S3DEBUG("hello");
     S3ERROR("hello");
 }

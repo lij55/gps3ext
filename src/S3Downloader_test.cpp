@@ -202,7 +202,6 @@ TEST(HTTPDownloader, random_parameters_256M) {
 }
 
 #ifdef AWSTEST
-
 TEST(S3Downloader, simple) {
     printf("try downloading data0014\n");
     S3DwonloadTest(
@@ -212,6 +211,18 @@ TEST(S3Downloader, simple) {
     printf("try downloading data0016\n");
     S3DwonloadTest(
         "http://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/data0016",
+        2536018, "0fd502a303eb8f138f5916ec357721b1", 4, 1024 * 1024, 65536);
+}
+
+TEST(S3Downloader, httpssimple) {
+    printf("try downloading data0014\n");
+    S3DwonloadTest(
+        "https://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/data0014",
+        4420346, "68c4a63b721e7af0ae945ce109ca87ad", 4, 1024 * 1024, 65536);
+
+    printf("try downloading data0016\n");
+    S3DwonloadTest(
+        "https://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/data0016",
         2536018, "0fd502a303eb8f138f5916ec357721b1", 4, 1024 * 1024, 65536);
 }
 

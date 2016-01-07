@@ -43,6 +43,9 @@ extern string s3ext_secret;
 // s3 token
 extern string s3ext_token;
 
+// http or https
+extern bool s3ext_encryption;
+
 // configuration file path
 extern string s3ext_config_path;
 

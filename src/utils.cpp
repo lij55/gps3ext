@@ -26,6 +26,7 @@
 
 #include <string>
 #include <sstream>
+#include <algorithm>
 using std::string;
 
 #include <iomanip>
@@ -48,7 +49,7 @@ bool gethttpnow(char datebuf[65]) {  //('D, d M Y H:i:s T')
     return true;
 }
 
-void tolower(char *buf) {
+void _tolower(char *buf) {
     do {
         if (*buf >= 'A' && *buf <= 'Z') *buf |= 0x60;
     } while (*buf++);
@@ -286,4 +287,13 @@ bool Config::Scan(const char *sec, const char *key, const char *scanfmt,
         return ini_sget(this->_conf, sec, key, scanfmt, dst);
     }
     return false;
+}
+
+bool to_bool(std::string str) {
+    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    if ((str == "yes") || (str == "true") || (str == "y") || (str == "t") ||
+        (str == "1")) {
+        return true;
+    } else
+        return false;
 }

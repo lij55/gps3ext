@@ -459,8 +459,18 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
 
     if (res != CURLE_OK) {
         S3ERROR("curl_easy_perform() failed: %s", curl_easy_strerror(res));
+        if (xml.ctxt) {  // cleanup
+            xmlFreeParserCtxt(xml.ctxt);
+            xml.ctxt = NULL;
+        }
+
+    } else {
+        if (xml.ctxt) {
+            xmlParseChunk(xml.ctxt, "", 0, 1);
+        } else {
+            S3ERROR("xml downloaded but fail to parse");
+        }
     }
-    xmlParseChunk(xml.ctxt, "", 0, 1);
     curl_slist_free_all(chunk);
     curl_easy_cleanup(curl);
 
@@ -518,23 +528,33 @@ static bool extractContent(ListBucketResult *result, xmlNode *root_element) {
     return true;
 }
 
-ListBucketResult *ListBucket(const char *host, const char *bucket,
-                             const char *prefix, const S3Credential &cred) {
+ListBucketResult *ListBucket(const char *schema, const char *host,
+                             const char *bucket, const char *prefix,
+                             const S3Credential &cred) {
     std::stringstream sstr;
     if (prefix) {
-        sstr << "http://" << host << "/" << bucket << "?prefix=" << prefix;
+        sstr << schema << "://" << host << "/" << bucket
+             << "?prefix=" << prefix;
         // sstr<<"http://"<<bucket<<"."<<host<<"?prefix="<<prefix;
     } else {
-        sstr << "http://" << bucket << "." << host;
+        sstr << schema << "://" << bucket << "." << host;
     }
 
     xmlParserCtxtPtr xmlcontext =
         DoGetXML(host, bucket, sstr.str().c_str(), cred);
+
+    if (!xmlcontext) {
+        S3ERROR("List bucket fail for %s", sstr.str().c_str());
+        return NULL;
+    }
+
     xmlNode *root_element = xmlDocGetRootElement(xmlcontext->myDoc);
     if (!root_element) {
         S3ERROR("Parse returned xml of bucket list failed");
+        xmlFreeParserCtxt(xmlcontext);
         return NULL;
     }
+
     ListBucketResult *result = new ListBucketResult();
 
     if (!result) {

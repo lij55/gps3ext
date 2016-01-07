@@ -49,6 +49,8 @@ string s3ext_accessid;
 string s3ext_secret;
 string s3ext_token;
 
+bool s3ext_encryption;
+
 // global variables
 int32_t s3ext_segid = -1;
 int32_t s3ext_segnum = -1;
@@ -129,6 +131,9 @@ bool InitConfig(const char* conf_path,
     if (!ret) {
         s3ext_low_speed_time = 60;
     }
+
+    content = cfg->Get("default", "encryption", "true");
+    s3ext_encryption = to_bool(content);
 
 #ifdef DEBUGS3
     s3ext_segid = 0;

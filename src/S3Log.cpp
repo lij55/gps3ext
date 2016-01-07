@@ -34,7 +34,7 @@ using std::make_shared;
 
 #ifndef DEBUGS3
 extern "C" {
-void write_log(const char *fmt,...) __attribute__((format(printf, 1, 2)));
+void write_log(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
 }
 #endif
 
@@ -42,8 +42,7 @@ void write_log(const char *fmt,...) __attribute__((format(printf, 1, 2)));
 void _LogMessage(const char* fmt, va_list args) {
     char buf[1024];
     int len = vsnprintf(buf, 1024, fmt, args);
-    if(len >= 1024)
-        len = 1023;
+    if (len >= 1024) len = 1023;
     buf[len] = 0;
 #ifdef DEBUGS3
     fprintf(stderr, "%s\n", buf);
@@ -55,8 +54,7 @@ void _LogMessage(const char* fmt, va_list args) {
 void _send_to_local(const char* fmt, va_list args) {
     char buf[1024];
     int len = vsnprintf(buf, 1024, fmt, args);
-    if(len >= 1024)
-        len = 1023;
+    if (len >= 1024) len = 1023;
     buf[len] = 0;
     sendto(s3ext_logsock_local, buf, len, 0,
            (struct sockaddr*)&s3ext_logserverpath, sizeof(struct sockaddr_un));
@@ -65,8 +63,7 @@ void _send_to_local(const char* fmt, va_list args) {
 void _send_to_remote(const char* fmt, va_list args) {
     char buf[1024];
     int len = vsnprintf(buf, 1024, fmt, args);
-    if(len >= 1024)
-        len = 1023;
+    if (len >= 1024) len = 1023;
     buf[len] = 0;
     sendto(s3ext_logsock_udp, buf, len, 0,
            (struct sockaddr*)&s3ext_logserveraddr, sizeof(struct sockaddr_in));

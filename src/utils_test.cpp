@@ -3,7 +3,7 @@
 #include "utils.cpp"
 TEST(utils, lower) {
     char data[] = "aAbBcCdDEeFfGgHhIiJjKkLlMmNnOopPQqRrSsTtuUVvwWxXYyZz";
-    tolower(data);
+    _tolower(data);
     EXPECT_STREQ("aabbccddeeffgghhiijjkkllmmnnooppqqrrssttuuvvwwxxyyzz", data);
 }
 

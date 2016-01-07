@@ -24,8 +24,8 @@ S3ExtBase::S3ExtBase(const char *url) {
 
     this->chunksize = s3ext_chunksize;
     this->concurrent_num = s3ext_threadnum;
-    S3INFO("Create %d thread for downloading", s3ext_chunksize);
-    S3INFO("File is splited to %d each", s3ext_threadnum);
+    S3INFO("Create %d thread for downloading", s3ext_threadnum);
+    S3INFO("File is splited to %d each", s3ext_chunksize);
 }
 
 S3ExtBase::~S3ExtBase() {}
@@ -56,20 +56,35 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
     stringstream sstr;
     sstr << "s3-" << this->region << ".amazonaws.com";
     S3DEBUG("host url is %s", sstr.str().c_str());
+    int initretry = 3;
+    while (initretry--) {
+        this->keylist =
+            ListBucket(this->schema.c_str(), sstr.str().c_str(),
+                       this->bucket.c_str(), this->prefix.c_str(), this->cred);
 
-    this->keylist = ListBucket(sstr.str().c_str(), this->bucket.c_str(),
-                               this->prefix.c_str(), this->cred);
+        if (!this->keylist) {
+            S3INFO("Can't get keylist from bucket %s", this->bucket.c_str());
+            if (initretry) {
+                S3INFO("retrying");
+                continue;
+            } else {
+                S3ERROR("Quit init because ListBucket keep failing");
+                return false;
+            }
+        }
 
-    if (!this->keylist) {
-        S3ERROR("Can't get key list from bucket %s", this->bucket.c_str());
-        return false;
+        if (this->keylist->contents.size() == 0) {
+            S3INFO("keylist of bucket is empty");
+            if (initretry) {
+                S3INFO("retrying");
+                continue;
+            } else {
+                S3ERROR("Quit init because empty keylist");
+                return false;
+            }
+        }
+        break;
     }
-
-    if (this->keylist->contents.size() == 0) {
-        S3ERROR("key list is empty");
-        return false;
-    }
-
     S3INFO("%d files to download", this->keylist->contents.size());
     this->getNextDownloader();
 
@@ -169,7 +184,10 @@ bool S3ExtBase::ValidateURL() {
 
     this->schema = url.substr(ibegin, iend);
     if (this->schema == "s3") {
-        this->schema = "http";
+        if (s3ext_encryption)
+            this->schema = "https";
+        else
+            this->schema = "http";
     }
 
     ibegin = url.find("-");
