@@ -134,7 +134,7 @@ string S3Reader::getKeyURL(const string &key) {
     return sstr.str();
 }
 
-bool S3Reader::TransferData(char *data, size_t &len) {
+bool S3Reader::TransferData(char *data, uint64_t &len) {
     if (!this->filedownloader) {
         // not initialized?
         return false;

@@ -52,7 +52,7 @@ TEST(ListBucket, fake) {
     for (i = r->contents.begin(); i != r->contents.end(); i++) {
         BucketContent *p = *i;
         sprintf(urlbuf, "http://%s/%s/%s", HOSTSTR, BUCKETSTR, p->Key());
-        printf("%s, %d\n", urlbuf, p->Size());
+        printf("%s, %llu\n", urlbuf, p->Size());
     }
     delete r;
 }

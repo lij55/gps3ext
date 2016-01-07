@@ -82,6 +82,7 @@ void *worker(void *a) {
         q.deQ(r);
         if (r == -1) break;
     }
+    return NULL;
 }
 
 #define num_threads 5

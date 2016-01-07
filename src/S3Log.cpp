@@ -99,7 +99,7 @@ void InitLog() {
         /* start with a clean address structure */
         memset(&s3ext_logserverpath, 0, sizeof(struct sockaddr_un));
         s3ext_logserverpath.sun_family = AF_UNIX;
-        snprintf(s3ext_logserverpath.sun_path, UNIX_PATH_MAX,
+        snprintf(s3ext_logserverpath.sun_path, UNIX_PATH_MAX, "%s",
                  s3ext_logpath.c_str());
 
         s3ext_logsock_udp = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);

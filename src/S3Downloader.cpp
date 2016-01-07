@@ -47,12 +47,12 @@ void OffsetMgr::Reset(uint64_t n) {
 
 BlockingBuffer::BlockingBuffer(const char *url, OffsetMgr *o)
     : sourceurl(url),
-      readpos(0),
-      realsize(0),
       status(BlockingBuffer::STATUS_EMPTY),
       eof(false),
-      mgr(o),
-      error(false) {
+      error(false),
+      readpos(0),
+      realsize(0),
+      mgr(o) {
     this->nextpos = o->NextOffset();
     this->bufcap = o->Chunksize();
 }
@@ -147,9 +147,9 @@ uint64_t BlockingBuffer::Fill() {
         }
     }
     this->status = BlockingBuffer::STATUS_READY;
-    if (this->realsize >= 0) {
-        pthread_cond_signal(&this->stat_cond);
-    }
+    // if (this->realsize >= 0) {
+    pthread_cond_signal(&this->stat_cond);
+    //}
 
     pthread_mutex_unlock(&this->stat_mutex);
     return (readlen == -1) ? -1 : this->realsize;
@@ -353,7 +353,8 @@ RETRY:
                      s3ext_low_speed_limit);
     curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_TIME, s3ext_low_speed_time);
 
-    snprintf(rangebuf, 128, "bytes=%" PRIu64 "-%" PRIu64, offset, offset + len - 1);
+    snprintf(rangebuf, 128, "bytes=%" PRIu64 "-%" PRIu64, offset,
+             offset + len - 1);
     this->AddHeaderField(RANGE, rangebuf);
     this->processheader();
 
@@ -376,10 +377,11 @@ RETRY:
         S3ERROR("curl_easy_perform() failed: %s", curl_easy_strerror(res));
         bi.len = -1;
     } else {
-        curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &res);
-        if (this->retry(res)) goto RETRY;
+        long respcode;
+        curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &respcode);
+        if (this->retry(respcode)) goto RETRY;
 
-        if (!((res == 200) || (res == 206))) {
+        if (!((respcode == 200) || (respcode == 206))) {
             S3ERROR("%.*s", (int)len, data);
             bi.len = -1;
         }
@@ -397,7 +399,7 @@ bool S3Fetcher::processheader() {
     return SignGETv2(&this->headers, this->urlparser.Path(), this->cred);
 }
 
-bool S3Fetcher::retry(CURLcode c) {
+bool S3Fetcher::retry(long c) {
     if (c == 403) {
         return true;
     } else {

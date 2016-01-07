@@ -12,7 +12,7 @@ class S3ExtBase {
     S3ExtBase(const char* url);
     virtual ~S3ExtBase();
     virtual bool Init(int segid, int segnum, int chunksize) = 0;
-    virtual bool TransferData(char* data, size_t& len) = 0;
+    virtual bool TransferData(char* data, uint64_t& len) = 0;
     virtual bool Destroy() = 0;
 
    protected:
@@ -38,7 +38,7 @@ class S3Reader : public S3ExtBase {
     S3Reader(const char* url);
     virtual ~S3Reader();
     virtual bool Init(int segid, int segnum, int chunksize);
-    virtual bool TransferData(char* data, size_t& len);
+    virtual bool TransferData(char* data, uint64_t& len);
     virtual bool Destroy();
 
    protected:
