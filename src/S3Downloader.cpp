@@ -260,7 +260,6 @@ RETRY:
     }
     len = tmplen;
 
-    S3DEBUG("get %lld, %lld / %lld", len, this->readlen, filelen);
     return true;
 }
 
@@ -377,6 +376,7 @@ RETRY:
         S3ERROR("curl_easy_perform() failed: %s", curl_easy_strerror(res));
         bi.len = -1;
     } else {
+        S3DEBUG("fetch %lld, %lld - %lld", len, offset, offset + len -1);
         long respcode;
         curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &respcode);
         if (this->retry(respcode)) goto RETRY;
