@@ -109,7 +109,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         if (!myData ||
             !myData->Init(s3ext_segid, s3ext_segnum, s3ext_chunksize)) {
             if (myData) delete myData;
-            ereport(ERROR, (0, errmsg("Init S3 extension fail")));
+            ereport(ERROR, (0, errmsg("Init S3 extension fail, segid = %d, segnum = %d", s3ext_segid, s3ext_segnum)));
         }
         /*
                   if(strcasecmp(parsed_url->protocol, p_name) != 0) {

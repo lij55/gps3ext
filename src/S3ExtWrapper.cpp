@@ -90,7 +90,8 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
     S3INFO("%d files to download", this->keylist->contents.size());
     this->getNextDownloader();
 
-    return this->filedownloader ? true : false;
+    // return this->filedownloader ? true : false;
+    return true;
 }
 
 void S3Reader::getNextDownloader() {
@@ -136,8 +137,10 @@ string S3Reader::getKeyURL(const string &key) {
 
 bool S3Reader::TransferData(char *data, uint64_t &len) {
     if (!this->filedownloader) {
+        S3INFO("No file to download, exit");
         // not initialized?
-        return false;
+        len = 0;
+        return true;
     }
     uint64_t buflen;
 RETRY:

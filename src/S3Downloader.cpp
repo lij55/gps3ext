@@ -121,7 +121,7 @@ uint64_t BlockingBuffer::Fill() {
         if (leftlen != 0) {
             readlen = this->fetchdata(offset, this->bufferdata + this->realsize,
                                       leftlen);
-            S3DEBUG("return %lld from libcurl", readlen);
+            S3DEBUG("return %d from libcurl", readlen);
         } else {
             readlen = 0;  // EOF
         }
@@ -260,6 +260,7 @@ RETRY:
     }
     len = tmplen;
 
+    // S3DEBUG("get %lld, %lld / %lld", len, this->readlen, filelen);
     return true;
 }
 
@@ -379,10 +380,12 @@ RETRY:
         S3DEBUG("fetch %lld, %lld - %lld", len, offset, offset + len -1);
         long respcode;
         curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &respcode);
+
+        S3DEBUG("respcode = %ld", respcode);
         if (this->retry(respcode)) goto RETRY;
 
         if (!((respcode == 200) || (respcode == 206))) {
-            S3ERROR("%.*s", (int)len, data);
+            S3ERROR("%.*s", (int)bi.len, data);
             bi.len = -1;
         }
     }
