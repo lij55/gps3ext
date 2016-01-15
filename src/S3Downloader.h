@@ -116,7 +116,6 @@ class HTTPFetcher : public BlockingBuffer {
    protected:
     uint64_t fetchdata(uint64_t offset, char* data, uint64_t len);
     virtual bool processheader() { return true; };
-    virtual bool retry(long retcode) { return false; };
     CURL* curl;
     Method method;
     HeaderContent headers;
@@ -130,7 +129,6 @@ class S3Fetcher : public HTTPFetcher {
 
    protected:
     virtual bool processheader();
-    virtual bool retry(long retcode);
 
    private:
     S3Credential cred;

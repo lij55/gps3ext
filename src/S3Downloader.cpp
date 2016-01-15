@@ -13,6 +13,8 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
+// #include <unistd.h>
+
 OffsetMgr::OffsetMgr(uint64_t m, uint64_t c)
     : maxsize(m), chunksize(c), curpos(0) {
     pthread_mutex_init(&this->offset_lock, NULL);
@@ -106,6 +108,7 @@ uint64_t BlockingBuffer::Read(char *buf, uint64_t len) {
     return length_to_read;
 }
 
+// returning -1 mearns error, pls don't set chunksize to uint64_t(-1) for now
 uint64_t BlockingBuffer::Fill() {
     // assert offset > 0, offset < this->bufcap
     pthread_mutex_lock(&this->stat_mutex);
@@ -115,13 +118,13 @@ uint64_t BlockingBuffer::Fill() {
     uint64_t offset = this->nextpos.offset;
     uint64_t leftlen = this->nextpos.len;
     // assert this->status != BlockingBuffer::STATUS_READY
-    int readlen = 0;
+    uint64_t readlen = 0;
     this->realsize = 0;
     while (this->realsize < this->bufcap) {
         if (leftlen != 0) {
             readlen = this->fetchdata(offset, this->bufferdata + this->realsize,
                                       leftlen);
-            S3DEBUG("return %d from libcurl", readlen);
+            S3DEBUG("return %lu from libcurl", readlen);
         } else {
             readlen = 0;  // EOF
         }
@@ -171,11 +174,11 @@ BlockingBuffer *BlockingBuffer::CreateBuffer(const char *url, OffsetMgr *o,
 
 void *DownloadThreadfunc(void *data) {
     BlockingBuffer *buffer = reinterpret_cast<BlockingBuffer *>(data);
-    size_t filled_size = 0;
+    uint64_t filled_size = 0;
     S3INFO("Download thread start");
     do {
         filled_size = buffer->Fill();
-        S3DEBUG("Fillsize is %lld", filled_size);
+        S3DEBUG("Fillsize is %lu", filled_size);
         if (buffer->EndOfFile()) break;
         if (filled_size == -1) {  // Error
             // retry?
@@ -326,68 +329,125 @@ bool HTTPFetcher::AddHeaderField(HeaderField f, const char *v) {
 
 // buffer size should be at lease len
 // read len data from offest
+// returning -1 mearns error, pls don't set chunksize to uint64_t(-1) for now
 uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
     if (len == 0) return 0;
     if (!this->curl) {
         S3ERROR("Can't fetch data without curl instance");
-        return 0;
+        return -1;
     }
 
-    int timeout_retry_time = 3;
+    int retry_time = 3;
 
-RETRY:
     Bufinfo bi;
-    bi.buf = data;
-    bi.maxsize = len;
-    bi.len = 0;
 
     CURL *curl_handle = this->curl;
+    struct curl_slist *chunk;
 
     char rangebuf[128];
 
-    curl_easy_setopt(curl_handle, CURLOPT_URL, this->sourceurl);
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&bi);
+    while (retry_time--) {
+        // redo HTTPFetcher::HTTPFetcher since we might have cleaned it up
+        // before retrying
+        /*
+         * if (curl_handle == NULL) {
+         *     curl_handle = curl_easy_init();
+         *     if (curl_handle) {
+         *         // curl_easy_setopt(this->curl, CURLOPT_VERBOSE, 1L);
+         *         // curl_easy_setopt(curl, CURLOPT_PROXY, "127.0.0.1:8080");
+         *         curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION,
+         *                          WriterCallback);
+         *         curl_easy_setopt(curl_handle, CURLOPT_FORBID_REUSE, 1L);
+         *         this->AddHeaderField(HOST, urlparser.Host());
+         *     } else {
+         *         S3ERROR("Create curl instance fail, no enough memory?");
+         *         return -1;
+         *     }
+         * }
+         */
 
-    // consider low speed as timeout
-    curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_LIMIT,
-                     s3ext_low_speed_limit);
-    curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_TIME, s3ext_low_speed_time);
+        bi.buf = data;
+        bi.maxsize = len;
+        bi.len = 0;
 
-    snprintf(rangebuf, 128, "bytes=%" PRIu64 "-%" PRIu64, offset,
-             offset + len - 1);
-    this->AddHeaderField(RANGE, rangebuf);
-    this->processheader();
+        curl_easy_setopt(curl_handle, CURLOPT_URL, this->sourceurl);
+        curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&bi);
 
-    struct curl_slist *chunk = this->headers.GetList();
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
+        // consider low speed as timeout
+        curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_LIMIT,
+                         s3ext_low_speed_limit);
+        curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_TIME,
+                         s3ext_low_speed_time);
 
-    CURLcode res = curl_easy_perform(curl_handle);
+        memset(rangebuf, 0, 128);
+        snprintf(rangebuf, 128, "bytes=%" PRIu64 "-%" PRIu64, offset,
+                 offset + len - 1);
+        this->AddHeaderField(RANGE, rangebuf);
+        this->processheader();
 
-    if (res == CURLE_OPERATION_TIMEDOUT) {
-        if (timeout_retry_time) {
+        chunk = this->headers.GetList();
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
+
+        CURLcode res = curl_easy_perform(curl_handle);
+
+        if (res == CURLE_OPERATION_TIMEDOUT) {
             S3INFO("net speed is too slow, retry");
-            timeout_retry_time--;
-            goto RETRY;
+            bi.len = -1;
+            /*
+             * curl_easy_cleanup(curl_handle);
+             * curl_handle = NULL;
+             */
+            /*
+             * if (retry_time <= 2) {
+             *     usleep(5000000);
+             * }
+             */
+            continue;
+        }
+
+        if (res != CURLE_OK) {
+            S3ERROR("curl_easy_perform() failed: %s", curl_easy_strerror(res));
+            bi.len = -1;
+            S3INFO("curl failed, retry");
+            /*
+             * curl_easy_cleanup(curl_handle);
+             * curl_handle = NULL;
+             */
+            /*
+             * if (retry_time <= 2) {
+             *     usleep(3000000);
+             * }
+             */
+            continue;
         } else {
-            S3ERROR("net speed is too slow, give up after 3 times");
+            S3DEBUG("fetch %lld, %lld - %lld", len, offset, offset + len - 1);
+            long respcode;
+            curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &respcode);
+
+            S3DEBUG("respcode = %ld", respcode);
+
+            if ((respcode != 200) && (respcode != 206)) {
+                S3ERROR("%.*s", (int)bi.len, data);
+                bi.len = -1;
+                S3INFO("respcode is weird, retry");
+                /*
+                 * curl_easy_cleanup(curl_handle);
+                 * curl_handle = NULL;
+                 */
+                /*
+                 * if (retry_time <= 2) {
+                 *     usleep(3000000);
+                 * }
+                 */
+                continue;
+            } else {
+                break;
+            }
         }
     }
 
-    if (res != CURLE_OK) {
-        S3ERROR("curl_easy_perform() failed: %s", curl_easy_strerror(res));
-        bi.len = -1;
-    } else {
-        S3DEBUG("fetch %lld, %lld - %lld", len, offset, offset + len -1);
-        long respcode;
-        curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &respcode);
-
-        S3DEBUG("respcode = %ld", respcode);
-        if (this->retry(respcode)) goto RETRY;
-
-        if (!((respcode == 200) || (respcode == 206))) {
-            S3ERROR("%.*s", (int)bi.len, data);
-            bi.len = -1;
-        }
+    if (curl_handle) {
+        this->curl = curl_handle;
     }
 
     return bi.len;
@@ -400,14 +460,6 @@ S3Fetcher::S3Fetcher(const char *url, OffsetMgr *o, const S3Credential &cred)
 
 bool S3Fetcher::processheader() {
     return SignGETv2(&this->headers, this->urlparser.Path(), this->cred);
-}
-
-bool S3Fetcher::retry(long c) {
-    if (c == 403) {
-        return true;
-    } else {
-        return false;
-    }
 }
 
 // CreateBucketContentItem
