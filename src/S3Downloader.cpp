@@ -13,7 +13,7 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
-// #include <unistd.h>
+#include <unistd.h>
 
 OffsetMgr::OffsetMgr(uint64_t m, uint64_t c)
     : maxsize(m), chunksize(c), curpos(0) {
@@ -124,7 +124,12 @@ uint64_t BlockingBuffer::Fill() {
         if (leftlen != 0) {
             readlen = this->fetchdata(offset, this->bufferdata + this->realsize,
                                       leftlen);
-            S3DEBUG("return %lu from libcurl", readlen);
+            // XXX fix the returning type
+            if (readlen == -1) {
+                S3DEBUG("failed to fetch data from libcurl");
+            } else {
+                S3DEBUG("return %lu from libcurl", readlen);
+            }
         } else {
             readlen = 0;  // EOF
         }
@@ -178,7 +183,12 @@ void *DownloadThreadfunc(void *data) {
     S3INFO("Download thread start");
     do {
         filled_size = buffer->Fill();
-        S3DEBUG("Fillsize is %lu", filled_size);
+        // XXX fix the returning type
+        if (filled_size == -1) {
+            S3DEBUG("failed to fill downloading buffer");
+        } else {
+            S3DEBUG("Fillsize is %lu", filled_size);
+        }
         if (buffer->EndOfFile()) break;
         if (filled_size == -1) {  // Error
             // retry?
@@ -347,24 +357,8 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
     char rangebuf[128];
 
     while (retry_time--) {
-        // redo HTTPFetcher::HTTPFetcher since we might have cleaned it up
-        // before retrying
-        /*
-         * if (curl_handle == NULL) {
-         *     curl_handle = curl_easy_init();
-         *     if (curl_handle) {
-         *         // curl_easy_setopt(this->curl, CURLOPT_VERBOSE, 1L);
-         *         // curl_easy_setopt(curl, CURLOPT_PROXY, "127.0.0.1:8080");
-         *         curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION,
-         *                          WriterCallback);
-         *         curl_easy_setopt(curl_handle, CURLOPT_FORBID_REUSE, 1L);
-         *         this->AddHeaderField(HOST, urlparser.Host());
-         *     } else {
-         *         S3ERROR("Create curl instance fail, no enough memory?");
-         *         return -1;
-         *     }
-         * }
-         */
+        // "Don't call cleanup() if you intend to transfer more files, re-using
+        // handles is a key to good performance with libcurl."
 
         bi.buf = data;
         bi.maxsize = len;
@@ -393,15 +387,9 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
         if (res == CURLE_OPERATION_TIMEDOUT) {
             S3INFO("net speed is too slow, retry");
             bi.len = -1;
-            /*
-             * curl_easy_cleanup(curl_handle);
-             * curl_handle = NULL;
-             */
-            /*
-             * if (retry_time <= 2) {
-             *     usleep(5000000);
-             * }
-             */
+            if (retry_time <= 2) {
+                usleep(5000000);
+            }
             continue;
         }
 
@@ -409,18 +397,12 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
             S3ERROR("curl_easy_perform() failed: %s", curl_easy_strerror(res));
             bi.len = -1;
             S3INFO("curl failed, retry");
-            /*
-             * curl_easy_cleanup(curl_handle);
-             * curl_handle = NULL;
-             */
-            /*
-             * if (retry_time <= 2) {
-             *     usleep(3000000);
-             * }
-             */
+            if (retry_time <= 2) {
+                usleep(3000000);
+            }
             continue;
         } else {
-            S3DEBUG("fetch %lld, %lld - %lld", len, offset, offset + len - 1);
+            S3DEBUG("fetch %lu, %lu - %lu", len, offset, offset + len - 1);
             long respcode;
             curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &respcode);
 
@@ -430,15 +412,9 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
                 S3ERROR("%.*s", (int)bi.len, data);
                 bi.len = -1;
                 S3INFO("respcode is weird, retry");
-                /*
-                 * curl_easy_cleanup(curl_handle);
-                 * curl_handle = NULL;
-                 */
-                /*
-                 * if (retry_time <= 2) {
-                 *     usleep(3000000);
-                 * }
-                 */
+                if (retry_time <= 2) {
+                    usleep(3000000);
+                }
                 continue;
             } else {
                 break;
