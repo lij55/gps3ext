@@ -18,7 +18,7 @@ char* Base64Encode(const char* buffer, size_t length);
 
 bool sha256(char* string, char outputBuffer[65]);
 
-char* sha1hmac(const char* str, const char* secret);
+bool sha1hmac(const char* str, char out[20], const char* secret);
 
 bool sha256hmac(char* str, char out[65], char* secret);
 

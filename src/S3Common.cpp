@@ -19,6 +19,7 @@ using std::stringstream;
 bool SignGETv2(HeaderContent *h, const char *path_with_query,
                const S3Credential &cred) {
     char timestr[64];
+    char tmpbuf[20];  // SHA_DIGEST_LENGTH is 20
 
     // CONTENT_LENGTH is not a part of StringToSign
     h->Add(CONTENTLENGTH, "0");
@@ -27,13 +28,17 @@ bool SignGETv2(HeaderContent *h, const char *path_with_query,
     h->Add(DATE, timestr);
     stringstream sstr;
     sstr << "GET\n\n\n" << timestr << "\n" << path_with_query;
-    char *tmpbuf = sha1hmac(sstr.str().c_str(), cred.secret.c_str());
-    int len = strlen(tmpbuf);
-    char *signature = Base64Encode(tmpbuf, len);
+    if (!sha1hmac(sstr.str().c_str(), tmpbuf, cred.secret.c_str())) {
+        return false;
+    }
+    // S3DEBUG("%s", sstr.str().c_str());
+    char *signature = Base64Encode(tmpbuf, 20);  // SHA_DIGEST_LENGTH is 20
+    // S3DEBUG("%s", signature);
     sstr.clear();
     sstr.str("");
     sstr << "AWS " << cred.keyid << ":" << signature;
     free(signature);
+    // S3DEBUG("%s", sstr.str().c_str());
     h->Add(AUTHORIZATION, sstr.str().c_str());
 
     return true;
@@ -42,6 +47,7 @@ bool SignGETv2(HeaderContent *h, const char *path_with_query,
 bool SignPUTv2(HeaderContent *h, const char *path_with_query,
                const S3Credential &cred) {
     char timestr[64];
+    char tmpbuf[20];  // SHA_DIGEST_LENGTH is 20
     string typestr;
 
     gethttpnow(timestr);
@@ -51,9 +57,10 @@ bool SignPUTv2(HeaderContent *h, const char *path_with_query,
     typestr = h->Get(CONTENTTYPE);
 
     sstr << "PUT\n\n" << typestr << "\n" << timestr << "\n" << path_with_query;
-    char *tmpbuf = sha1hmac(sstr.str().c_str(), cred.secret.c_str());
-    int len = strlen(tmpbuf);
-    char *signature = Base64Encode(tmpbuf, len);
+    if (!sha1hmac(sstr.str().c_str(), tmpbuf, cred.secret.c_str())) {
+        return false;
+    }
+    char *signature = Base64Encode(tmpbuf, 20);  // SHA_DIGEST_LENGTH is 20
     sstr.clear();
     sstr.str("");
     sstr << "AWS " << cred.keyid << ":" << signature;
@@ -66,6 +73,7 @@ bool SignPUTv2(HeaderContent *h, const char *path_with_query,
 bool SignPOSTv2(HeaderContent *h, const char *path_with_query,
                 const S3Credential &cred) {
     char timestr[64];
+    char tmpbuf[20];  // SHA_DIGEST_LENGTH is 20
     // string md5str;
 
     gethttpnow(timestr);
@@ -83,9 +91,10 @@ bool SignPOSTv2(HeaderContent *h, const char *path_with_query,
              << "\n" << timestr << "\n" << path_with_query;
     }
     printf("%s\n", sstr.str().c_str());
-    char *tmpbuf = sha1hmac(sstr.str().c_str(), cred.secret.c_str());
-    int len = strlen(tmpbuf);
-    char *signature = Base64Encode(tmpbuf, len);
+    if (!sha1hmac(sstr.str().c_str(), tmpbuf, cred.secret.c_str())) {
+        return false;
+    }
+    char *signature = Base64Encode(tmpbuf, 20);  // SHA_DIGEST_LENGTH is 20
     sstr.clear();
     sstr.str("");
     sstr << "AWS " << cred.keyid << ":" << signature;

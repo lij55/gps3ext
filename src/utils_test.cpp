@@ -67,6 +67,20 @@ TEST(utils, sha256) {
         hash_str);
 }
 
+TEST(utils, sha1hmac) {
+    unsigned char hash[20] = {0};  // must be unsigned here
+    char hash_str[41] = {0};
+
+    EXPECT_TRUE(sha1hmac(TEST_STRING, (char *)hash, "key"));
+
+    for (int i = 0; i < 20; i++) {
+        sprintf(hash_str + (i * 2), "%02x", hash[i]);
+    }
+    hash_str[40] = 0;
+
+    EXPECT_STREQ("de7c9b85b8b78aa6bc8a7a36f70a90701c9db4d9", hash_str);
+}
+
 TEST(utils, sha256hmac) {
     char hash_str[65] = {0};
     EXPECT_TRUE(sha256hmac(TEST_STRING, hash_str, "key"));
