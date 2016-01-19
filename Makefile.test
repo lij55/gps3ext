@@ -3,7 +3,7 @@ CFLAGS = -g3 -std=c++11 -fPIC -fprofile-arcs -ftest-coverage
 INCLUDES = -Isrc -Ilib -I/usr/include/libxml2
 LDFLAGS = -lpthread -lcrypto -lcurl -lxml2 -lgcov
 
-testcources = lib/http_parser.cpp lib/ini.cpp src/gps3conf_test.cpp src/utils_test.cpp src/S3Downloader_test.cpp src/S3Common_test.cpp src/S3ExtWrapper_test.cpp src/S3Uploader_test.cpp src/S3Log_test.cpp
+testcources = src/gps3conf_test.cpp src/utils_test.cpp src/S3Downloader_test.cpp src/S3Common_test.cpp src/S3ExtWrapper_test.cpp src/S3Uploader_test.cpp src/S3Log_test.cpp
 
 testapp = s3test
 testobjs = $(testcources:.cpp=.o)
@@ -14,7 +14,6 @@ GTEST_DIR = gtest
 # trailing _.
 GTEST_SRCS_ = $(GTEST_DIR)/src/*.cc $(GTEST_DIR)/src/*.h $(GTEST_HEADERS)
 
-# all: build buildtest
 all: test
 
 $(testobjs) gtest-all.o gtest_main.o: INCLUDES += -I$(GTEST_DIR)/include -I$(GTEST_DIR)/
@@ -48,6 +47,9 @@ clean:
 	rm -f $(testapp) src/*.o src/*.a lib/*.o *.o *.a
 	rm -f *.gcov src/*.gcov src/*.gcda src/*.gcno
 
+distclean: clean
+	rm -f tags cscope.*
+
 tags:
 	etags src/*.cpp src/*.h
 
@@ -60,4 +62,4 @@ style:
 format:
 	clang-format -style="{BasedOnStyle: Google, IndentWidth: 4}" -i src/*.cpp src/*.h
 
-.PHONY: test coverage clean lint style format
+.PHONY: test coverage clean distclean lint style format

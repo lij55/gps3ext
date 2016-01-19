@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include "ini.cpp"
 #include "gps3conf.cpp"
 #include <cstdlib>
 
