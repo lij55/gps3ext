@@ -70,7 +70,7 @@ BlockingBuffer::~BlockingBuffer() {
 bool BlockingBuffer::Init() {
     this->bufferdata = (char *)malloc(this->bufcap);
     if (!this->bufferdata) {
-        S3ERROR("allocate Buffer failed, not enough memory?");
+        S3ERROR("Failed to allocate Buffer, no enough memory?");
         return false;
     }
     pthread_mutex_init(&this->stat_mutex, NULL);
@@ -128,7 +128,7 @@ uint64_t BlockingBuffer::Fill() {
             if (readlen == -1) {
                 S3DEBUG("Failed to fetch data from libcurl");
             } else {
-                S3DEBUG("Got %lu from libcurl", readlen);
+                S3DEBUG("Got %lu bytes from libcurl", readlen);
             }
         } else {
             readlen = 0;  // EOF
@@ -208,14 +208,14 @@ Downloader::Downloader(uint8_t part_num) : num(part_num) {
     if (this->threads)
         memset((void *)this->threads, 0, num * sizeof(pthread_t));
     else {
-        S3ERROR("malloc thread fail. not enough memory");
+        S3ERROR("Failed to malloc thread, no enough memory");
     }
 
     this->buffers = (BlockingBuffer **)malloc(num * sizeof(BlockingBuffer *));
     if (this->buffers)
         memset((void *)this->buffers, 0, num * sizeof(BlockingBuffer *));
     else {
-        S3ERROR("malloc blocking buffer fail. not enough memory");
+        S3ERROR("Failed to malloc blocking buffer, no enough memory?");
     }
 }
 
@@ -227,7 +227,7 @@ bool Downloader::init(const char *url, uint64_t size, uint64_t chunksize,
 
     this->o = new OffsetMgr(size, chunksize);
     if (!this->o) {
-        S3ERROR("Create offset manager fail, not enough memory?");
+        S3ERROR("Failed to create offset manager, no enough memory?");
         return false;
     }
 
@@ -235,7 +235,7 @@ bool Downloader::init(const char *url, uint64_t size, uint64_t chunksize,
         this->buffers[i] = BlockingBuffer::CreateBuffer(
             url, o, pcred);  // decide buffer according to url
         if (!this->buffers[i]->Init()) {
-            S3ERROR("Blocking buffer init fail");
+            S3ERROR("Failed to init blocking buffer");
             return false;
         }
         pthread_create(&this->threads[i], NULL, DownloadThreadfunc,
@@ -261,7 +261,7 @@ RETRY:
     if (tmplen < len) {
         this->chunkcount++;
         if (buf->Error()) {
-            S3ERROR("Error occur while downloading, skip");
+            S3ERROR("Error occurs while downloading, skip");
             return false;
         }
     }
@@ -331,7 +331,7 @@ bool HTTPFetcher::SetMethod(Method m) {
 bool HTTPFetcher::AddHeaderField(HeaderField f, const char *v) {
     if (v == NULL) {
         // log warning
-        S3INFO("skip empty field for %s", GetFieldString(f));
+        S3INFO("Skip adding empty field for %s", GetFieldString(f));
         return false;
     }
     return this->headers.Add(f, v);
@@ -376,7 +376,7 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
                  offset + len - 1);
         this->AddHeaderField(RANGE, rangebuf);
         if (!this->processheader()) {
-            S3ERROR("failed to sign while fetching data, retry");
+            S3ERROR("Failed to sign while fetching data, retry");
             if (retry_time <= 2) {
                 usleep(2000000);
             }
@@ -389,7 +389,7 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
         CURLcode res = curl_easy_perform(curl_handle);
 
         if (res == CURLE_OPERATION_TIMEDOUT) {
-            S3INFO("net speed is too slow, retry");
+            S3INFO("Net speed is too slow, retry");
             bi.len = -1;
             if (retry_time <= 2) {
                 usleep(5000000);
@@ -409,12 +409,12 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
             S3DEBUG("Fetched %lu, %lu - %lu", len, offset, offset + len - 1);
             curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &respcode);
 
-            S3DEBUG("Response code is %ld", respcode);
+            S3DEBUG("HTTP response code is %ld", respcode);
 
             if ((respcode != 200) && (respcode != 206)) {
                 S3ERROR("%.*s", (int)bi.len, data);
                 bi.len = -1;
-                S3INFO("respcode is weird, retry");
+                S3INFO("HTTP respcode is weird, retry");
                 if (retry_time <= 2) {
                     usleep(3000000);
                 }
@@ -512,7 +512,7 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
         if (xml.ctxt) {
             xmlParseChunk(xml.ctxt, "", 0, 1);
         } else {
-            S3ERROR("xml is downloaded but failed to be parsed");
+            S3ERROR("XML is downloaded but failed to be parsed");
         }
     }
     curl_slist_free_all(chunk);
@@ -563,7 +563,7 @@ static bool extractContent(ListBucketResult *result, xmlNode *root_element) {
                     S3ERROR("Faild to create item for %s", key);
                 }
             } else {
-                S3INFO("size of %s is %d, skip", key, size);
+                S3INFO("Size of %s is %lu, skip", key, size);
             }
         }
         cur = cur->next;
@@ -608,7 +608,7 @@ ListBucketResult *ListBucket(const char *schema, const char *host,
         return NULL;
     }
     if (!extractContent(result, root_element)) {
-        S3ERROR("Failed extract key from bucket list");
+        S3ERROR("Failed to extract key from bucket list");
         delete result;
         xmlFreeParserCtxt(xmlcontext);
         return NULL;
@@ -649,7 +649,7 @@ ListBucketResult *ListBucket_FakeHTTP(const char *host, const char *bucket) {
     }
     xmlParseChunk(xml.ctxt, "", 0, 1);
     if (!xml.ctxt) {
-        S3ERROR("xmlParseChunk failed");
+        S3ERROR("xmlParseChunk() failed");
         return NULL;
     }
 

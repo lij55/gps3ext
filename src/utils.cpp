@@ -273,7 +273,7 @@ Config::Config(const char *filename) : _conf(NULL) {
     if (filename) this->_conf = ini_load(filename);
     if (this->_conf == NULL) {
 #ifndef DEBUGS3
-        write_log("failed to load config file\n");
+        write_log("Failed to load config file\n");
 #endif
     }
 }

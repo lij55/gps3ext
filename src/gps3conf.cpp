@@ -63,7 +63,7 @@ bool InitConfig(const char* conf_path,
                 const char* section /*not used currently*/) {
     if (!conf_path) {
 #ifndef DEBUGS3
-        write_log("config file is not specified\n");
+        write_log("Config file is not specified\n");
 #endif
         return false;
     }
@@ -72,7 +72,7 @@ bool InitConfig(const char* conf_path,
         s3cfg = new Config(conf_path);
         if (!s3cfg) {
 #ifndef DEBUGS3
-            write_log("failed to parse config file\n");
+            write_log("Failed to parse config file\n");
 #endif
             return false;
         }
@@ -106,26 +106,26 @@ bool InitConfig(const char* conf_path,
 
     ret = cfg->Scan("default", "threadnum", "%d", &s3ext_threadnum);
     if (!ret) {
-        S3INFO("failed to get thread number, use default value 4");
+        S3INFO("Failed to get thread number, use default value 4");
         s3ext_threadnum = 4;
     }
 
     ret = cfg->Scan("default", "chunksize", "%d", &s3ext_chunksize);
     if (!ret) {
-        S3INFO("failed to get chunksize, use default value %d",
+        S3INFO("Failed to get chunksize, use default value %d",
                64 * 1024 * 1024);
         s3ext_chunksize = 64 * 1024 * 1024;
     }
 
     ret = cfg->Scan("default", "low_speed_limit", "%d", &s3ext_low_speed_limit);
     if (!ret) {
-        S3INFO("failed to get low_speed_limit, use default value %d", 1024);
+        S3INFO("Failed to get low_speed_limit, use default value %d", 1024);
         s3ext_low_speed_limit = 1024;
     }
 
     ret = cfg->Scan("default", "low_speed_time", "%d", &s3ext_low_speed_time);
     if (!ret) {
-        S3INFO("failed to get low_speed_time, use default value %d", 60);
+        S3INFO("Failed to get low_speed_time, use default value %d", 60);
         s3ext_low_speed_time = 60;
     }
 

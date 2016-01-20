@@ -77,9 +77,9 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
         }
 
         if (this->keylist->contents.size() == 0) {
-            S3INFO("keylist of bucket is empty");
+            S3INFO("Keylist of bucket is empty");
             if (initretry) {
-                S3INFO("retrying");
+                S3INFO("Retry listing bucket");
                 continue;
             } else {
                 S3ERROR("Quit initialization because keylist is empty");
@@ -157,7 +157,7 @@ RETRY:
         // change to next downloader
         this->getNextDownloader();
         if (this->filedownloader) {  // download next file
-            S3INFO("Change to new file");
+            S3INFO("Time to download new file");
             goto RETRY;
         }
     }
@@ -226,14 +226,13 @@ bool S3Protocol_t::Write(char *data, size_t &len) {
         // not initialized?
         return false;
     }
-    S3DEBUG("write_len is %d", len);
 
     bool result = fileuploader->write(data, len);
     if (!result) {
-        S3DEBUG("write data via fileuploader fail");
+        S3DEBUG("Failed to write data via fileuploader");
         return false;
     }
-    S3DEBUG("write_len is %ld", len);
+
     return true;
 }
 */

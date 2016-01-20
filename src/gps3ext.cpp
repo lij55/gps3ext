@@ -87,7 +87,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         bool result = InitConfig(config_path, NULL);
         if (!result) {
             ereport(ERROR,
-                    (0, errmsg("can't find config file in %s", config_path)));
+                    (0, errmsg("Can't find config file %s", config_path)));
             free(config_path);
         } else {
             ClearConfig();
@@ -97,15 +97,15 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         InitLog();
 
         if (s3ext_accessid == "") {
-            ereport(ERROR, (0, errmsg("access id is empty")));
+            ereport(ERROR, (0, errmsg("ERROR: access id is empty")));
         }
 
         if (s3ext_secret == "") {
-            ereport(ERROR, (0, errmsg("secret is empty")));
+            ereport(ERROR, (0, errmsg("ERROR: secret is empty")));
         }
 
         if ((s3ext_segnum == -1) || (s3ext_segid == -1)) {
-            ereport(ERROR, (0, errmsg("segment id is invalid")));
+            ereport(ERROR, (0, errmsg("ERROR: segment id is invalid")));
         }
 
         myData = CreateExtWrapper(url);
