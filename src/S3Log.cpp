@@ -93,7 +93,7 @@ void InitLog() {
     if (!loginited) {
         s3ext_logsock_local = socket(PF_UNIX, SOCK_DGRAM, 0);
         if (s3ext_logsock_local < 0) {
-            perror("create socket fail");
+            perror("Failed to create socket");
         }
 
         /* start with a clean address structure */
@@ -104,7 +104,7 @@ void InitLog() {
 
         s3ext_logsock_udp = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
         if (s3ext_logsock_udp < 0) {
-            perror("create socket fail");
+            perror("Failed to create socket");
         }
 
         memset(&s3ext_logserveraddr, 0, sizeof(struct sockaddr_in));

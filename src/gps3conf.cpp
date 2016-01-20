@@ -60,17 +60,17 @@ Config* s3cfg = NULL;
 // not thread safe!!
 // Called only once.
 bool InitConfig(const char* conf_path,
-                const char* section /*unused currently*/) {
+                const char* section /*not used currently*/) {
     if (!conf_path) {
-        // empty path, log error
+#ifndef DEBUGS3
+        write_log("config file is not specified\n");
+#endif
         return false;
     }
 
     if (!s3cfg) {
         s3cfg = new Config(conf_path);
         if (!s3cfg) {
-// create s3cfg fail
-// log error
 #ifndef DEBUGS3
             write_log("failed to parse config file\n");
 #endif
@@ -119,11 +119,13 @@ bool InitConfig(const char* conf_path,
 
     ret = cfg->Scan("default", "low_speed_limit", "%d", &s3ext_low_speed_limit);
     if (!ret) {
+        S3INFO("failed to get low_speed_limit, use default value %d", 1024);
         s3ext_low_speed_limit = 1024;
     }
 
     ret = cfg->Scan("default", "low_speed_time", "%d", &s3ext_low_speed_time);
     if (!ret) {
+        S3INFO("failed to get low_speed_time, use default value %d", 60);
         s3ext_low_speed_time = 60;
     }
 

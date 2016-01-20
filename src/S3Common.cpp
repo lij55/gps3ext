@@ -90,7 +90,7 @@ bool SignPOSTv2(HeaderContent *h, const char *path_with_query,
              << "\n"
              << "\n" << timestr << "\n" << path_with_query;
     }
-    printf("%s\n", sstr.str().c_str());
+    // printf("%s\n", sstr.str().c_str());
     if (!sha1hmac(sstr.str().c_str(), tmpbuf, cred.secret.c_str())) {
         return false;
     }

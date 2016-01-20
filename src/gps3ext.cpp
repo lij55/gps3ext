@@ -78,7 +78,9 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         url[url_len] = 0;
 
         char *config_path = get_opt_s3(options, "config");
-        if (!config_path) {  // no config path in url, use default value
+        if (!config_path) {
+            // no config path in url, use default value
+            // data_folder/gpseg0/s3/s3.conf
             config_path = strdup("./s3/s3.conf");
         }
 
@@ -91,7 +93,9 @@ Datum s3_import(PG_FUNCTION_ARGS) {
             ClearConfig();
             free(config_path);
         }
+
         InitLog();
+
         if (s3ext_accessid == "") {
             ereport(ERROR, (0, errmsg("access id is empty")));
         }
@@ -109,10 +113,10 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         if (!myData ||
             !myData->Init(s3ext_segid, s3ext_segnum, s3ext_chunksize)) {
             if (myData) delete myData;
-            ereport(
-                ERROR,
-                (0, errmsg("Init S3 extension fail, segid = %d, segnum = %d",
-                           s3ext_segid, s3ext_segnum)));
+            ereport(ERROR,
+                    (0, errmsg("Failed to init S3 extension, segid = %d, "
+                               "segnum = %d, please check your net connection",
+                               s3ext_segid, s3ext_segnum)));
         }
         /*
                   if(strcasecmp(parsed_url->protocol, p_name) != 0) {

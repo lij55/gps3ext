@@ -26,7 +26,8 @@ S3ExtBase::S3ExtBase(const char *url) {
 
     this->chunksize = s3ext_chunksize;
     this->concurrent_num = s3ext_threadnum;
-    S3INFO("Create %d thread for downloading", s3ext_threadnum);
+
+    S3INFO("Created %d threads for downloading", s3ext_threadnum);
     S3INFO("File is splited to %d each", s3ext_chunksize);
 }
 
@@ -50,7 +51,7 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
 
     // Validate url first
     if (!this->ValidateURL()) {
-        S3ERROR("validate url fail %s", this->url.c_str());
+        S3ERROR("The given URL(%s)is invalid", this->url.c_str());
         return false;
     }
 
@@ -70,7 +71,7 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
                 S3INFO("retrying");
                 continue;
             } else {
-                S3ERROR("Quit init because ListBucket keep failing");
+                S3ERROR("Quit initialization because ListBucket keeps failing");
                 return false;
             }
         }
@@ -81,13 +82,13 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
                 S3INFO("retrying");
                 continue;
             } else {
-                S3ERROR("Quit init because empty keylist");
+                S3ERROR("Quit initialization because keylist is empty");
                 return false;
             }
         }
         break;
     }
-    S3INFO("%d files to download", this->keylist->contents.size());
+    S3INFO("Got %d files to download", this->keylist->contents.size());
     this->getNextDownloader();
 
     // return this->filedownloader ? true : false;
@@ -102,13 +103,13 @@ void S3Reader::getNextDownloader() {
     }
 
     if (this->contentindex >= this->keylist->contents.size()) {
-        S3DEBUG("no more file to download");
+        S3DEBUG("No more files to download");
         return;
     }
     this->filedownloader = new Downloader(this->concurrent_num);
 
     if (!this->filedownloader) {
-        S3ERROR("Create filedownloader fail");
+        S3ERROR("Failed to create filedownloader");
         return;
     }
     BucketContent *c = this->keylist->contents[this->contentindex];
@@ -137,7 +138,7 @@ string S3Reader::getKeyURL(const string &key) {
 
 bool S3Reader::TransferData(char *data, uint64_t &len) {
     if (!this->filedownloader) {
-        S3INFO("No file to download, exit");
+        S3INFO("No files to download, exit");
         // not initialized?
         len = 0;
         return true;
@@ -148,7 +149,7 @@ RETRY:
     // S3DEBUG("getlen is %d", len);
     bool result = filedownloader->get(data, buflen);
     if (!result) {  // read fail
-        S3ERROR("get data from filedownloader fail");
+        S3ERROR("Failed to get data from filedownloader");
         return false;
     }
     // S3DEBUG("getlen is %lld", buflen);

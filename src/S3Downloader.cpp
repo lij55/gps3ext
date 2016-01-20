@@ -126,9 +126,9 @@ uint64_t BlockingBuffer::Fill() {
                                       leftlen);
             // XXX fix the returning type
             if (readlen == -1) {
-                S3DEBUG("failed to fetch data from libcurl");
+                S3DEBUG("Failed to fetch data from libcurl");
             } else {
-                S3DEBUG("return %lu from libcurl", readlen);
+                S3DEBUG("Got %lu from libcurl", readlen);
             }
         } else {
             readlen = 0;  // EOF
@@ -137,7 +137,7 @@ uint64_t BlockingBuffer::Fill() {
             // if (this->realsize == 0) {
             this->eof = true;
             //}
-            S3DEBUG("reach end of file");
+            S3DEBUG("Reached the end of file");
             break;
         } else if (readlen == -1) {  // Error, network error or sth.
             // perror, retry
@@ -145,7 +145,7 @@ uint64_t BlockingBuffer::Fill() {
             // Ensure status is still empty
             // this->status = BlockingBuffer::STATUS_READY;
             // pthread_cond_signal(&this->stat_cond);
-            S3ERROR("Download file failed");
+            S3ERROR("Failed to download file");
             break;
         } else {  // > 0
             offset += readlen;
@@ -180,14 +180,14 @@ BlockingBuffer *BlockingBuffer::CreateBuffer(const char *url, OffsetMgr *o,
 void *DownloadThreadfunc(void *data) {
     BlockingBuffer *buffer = reinterpret_cast<BlockingBuffer *>(data);
     uint64_t filled_size = 0;
-    S3INFO("Download thread start");
+    S3INFO("Starting the downloading thread");
     do {
         filled_size = buffer->Fill();
         // XXX fix the returning type
         if (filled_size == -1) {
-            S3DEBUG("failed to fill downloading buffer");
+            S3DEBUG("Failed to fill downloading buffer");
         } else {
-            S3DEBUG("Fillsize is %lu", filled_size);
+            S3DEBUG("Size of filled data is %lu", filled_size);
         }
         if (buffer->EndOfFile()) break;
         if (filled_size == -1) {  // Error
@@ -199,7 +199,7 @@ void *DownloadThreadfunc(void *data) {
             }
         }
     } while (1);
-    S3INFO("Download thread end");
+    S3INFO("Ending the downloading thread");
     return NULL;
 }
 
@@ -273,7 +273,7 @@ RETRY:
     }
     len = tmplen;
 
-    // S3DEBUG("get %lld, %lld / %lld", len, this->readlen, filelen);
+    // S3DEBUG("Got %lu, %lu / %lu", len, this->readlen, filelen);
     return true;
 }
 
@@ -315,7 +315,7 @@ HTTPFetcher::HTTPFetcher(const char *url, OffsetMgr *o)
         curl_easy_setopt(this->curl, CURLOPT_FORBID_REUSE, 1L);
         this->AddHeaderField(HOST, urlparser.Host());
     } else {
-        S3ERROR("Create curl instance fail, not enough memory?");
+        S3ERROR("Failed to create curl instance, no enough memory?");
     }
 }
 
@@ -348,13 +348,11 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
     }
 
     int retry_time = 3;
-
     Bufinfo bi;
-
     CURL *curl_handle = this->curl;
     struct curl_slist *chunk;
-
     char rangebuf[128];
+    long respcode;
 
     while (retry_time--) {
         // "Don't call cleanup() if you intend to transfer more files, re-using
@@ -377,7 +375,13 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
         snprintf(rangebuf, 128, "bytes=%" PRIu64 "-%" PRIu64, offset,
                  offset + len - 1);
         this->AddHeaderField(RANGE, rangebuf);
-        this->processheader();
+        if (!this->processheader()) {
+            S3ERROR("failed to sign while fetching data, retry");
+            if (retry_time <= 2) {
+                usleep(2000000);
+            }
+            continue;
+        }
 
         chunk = this->headers.GetList();
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
@@ -396,17 +400,16 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
         if (res != CURLE_OK) {
             S3ERROR("curl_easy_perform() failed: %s", curl_easy_strerror(res));
             bi.len = -1;
-            S3INFO("curl failed, retry");
+            S3INFO("Failed to perform curl, retry");
             if (retry_time <= 2) {
                 usleep(3000000);
             }
             continue;
         } else {
-            S3DEBUG("fetch %lu, %lu - %lu", len, offset, offset + len - 1);
-            long respcode;
+            S3DEBUG("Fetched %lu, %lu - %lu", len, offset, offset + len - 1);
             curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &respcode);
 
-            S3DEBUG("respcode = %ld", respcode);
+            S3DEBUG("Response code is %ld", respcode);
 
             if ((respcode != 200) && (respcode != 206)) {
                 S3ERROR("%.*s", (int)bi.len, data);
@@ -453,7 +456,7 @@ BucketContent *CreateBucketContentItem(const char *key, uint64_t size) {
     if (!tmp) return NULL;
     BucketContent *ret = new BucketContent();
     if (!ret) {
-        S3ERROR("Can't create bucket list, not enough memory?");
+        S3ERROR("Can't create bucket list, no enough memory?");
         free((void *)tmp);
         return NULL;
     }
@@ -472,7 +475,7 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
         // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
     } else {
-        S3ERROR("Can't create curl instance, not enough memory?");
+        S3ERROR("Can't create curl instance, no enough memory?");
         return NULL;
     }
 
@@ -487,7 +490,10 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
     sstr << bucket << ".s3.amazonaws.com";
     header->Add(HOST, host);
     UrlParser p(url);
-    SignGETv2(header, p.Path(), cred);
+    if (!SignGETv2(header, p.Path(), cred)) {
+        S3ERROR("failed to sign in DoGetXML()");
+        return NULL;
+    }
 
     struct curl_slist *chunk = header->GetList();
 
@@ -506,7 +512,7 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
         if (xml.ctxt) {
             xmlParseChunk(xml.ctxt, "", 0, 1);
         } else {
-            S3ERROR("xml downloaded but fail to parse");
+            S3ERROR("xml is downloaded but failed to be parsed");
         }
     }
     curl_slist_free_all(chunk);
@@ -582,13 +588,13 @@ ListBucketResult *ListBucket(const char *schema, const char *host,
         DoGetXML(host, bucket, sstr.str().c_str(), cred);
 
     if (!xmlcontext) {
-        S3ERROR("List bucket fail for %s", sstr.str().c_str());
+        S3ERROR("Failed to list bucket for %s", sstr.str().c_str());
         return NULL;
     }
 
     xmlNode *root_element = xmlDocGetRootElement(xmlcontext->myDoc);
     if (!root_element) {
-        S3ERROR("Parse returned xml of bucket list failed");
+        S3ERROR("Failed to parse returned xml of bucket list");
         xmlFreeParserCtxt(xmlcontext);
         return NULL;
     }
@@ -597,12 +603,12 @@ ListBucketResult *ListBucket(const char *schema, const char *host,
 
     if (!result) {
         // allocate fail
-        S3ERROR("allocate bucket list result fail");
+        S3ERROR("Failed to allocate bucket list result");
         xmlFreeParserCtxt(xmlcontext);
         return NULL;
     }
     if (!extractContent(result, root_element)) {
-        S3ERROR("extract key from bucket list fail");
+        S3ERROR("Failed extract key from bucket list");
         delete result;
         xmlFreeParserCtxt(xmlcontext);
         return NULL;
@@ -649,7 +655,7 @@ ListBucketResult *ListBucket_FakeHTTP(const char *host, const char *bucket) {
 
     xmlNode *root_element = xmlDocGetRootElement(xml.ctxt->myDoc);
     if (!root_element) {
-        S3ERROR("create xml node fail");
+        S3ERROR("Failed to create xml node");
         return NULL;
     }
     ListBucketResult *result = new ListBucketResult();

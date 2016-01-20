@@ -85,7 +85,7 @@ bool trim(char *out, const char *in, const char *trimed) {
     return true;
 }
 
-//! return value is malloced
+//! returning value is malloced
 char *Base64Encode(const char *buffer,
                    size_t length) {  // Encodes a binary safe base 64 string
     BIO *bio, *b64;
@@ -164,7 +164,7 @@ bool sha256hmac(const char *str, char out[65], const char *secret) {
     return true;
 }
 
-// return malloced because Base64Encode
+// return malloced memory because Base64Encode() does so
 char *SignatureV2(const char *date, const char *path, const char *key) {
     int maxlen, len;
     char *tmpbuf;
