@@ -89,6 +89,7 @@ TEST(utils, sha256hmac) {
         hash_str);
 }
 
+#if 0
 concurrent_queue<int> q;
 void *worker(void *a) {
     int r;
@@ -119,7 +120,9 @@ TEST(queue, simple) {
         pthread_join(thread_id[i], NULL);
     }
 }
+#endif
 
+#if 0
 #include <memory>
 using std::shared_ptr;
 using std::make_shared;
@@ -160,6 +163,7 @@ TEST(databuffer, simple) {
     EXPECT_EQ(pdata->append(TEST_STRING, strlen(TEST_STRING)), 42);
     EXPECT_EQ(pdata->append(TEST_STRING, strlen(TEST_STRING)), 0);
 }
+#endif
 
 TEST(utils, Config) {
     Config c("test/s3.conf");

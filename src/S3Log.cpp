@@ -17,8 +17,8 @@
 #include <vector>
 #include <memory>
 using std::vector;
-using std::shared_ptr;
-using std::make_shared;
+// using std::shared_ptr;
+// using std::make_shared;
 #include "utils.h"
 
 #include "S3Log.h"

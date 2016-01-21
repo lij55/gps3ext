@@ -3,7 +3,7 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <cstdint>
+// #include <cstdint>
 #include <cstring>
 #include "ini.h"
 bool gethttpnow(char datebuf[65]);
@@ -53,6 +53,7 @@ class MD5Calc {
     string result;
 };
 
+#if 0
 #include <mutex>
 #include <queue>
 #include <condition_variable>
@@ -88,6 +89,7 @@ class concurrent_queue {
         _q.pop();
     }
 };
+#endif
 
 class DataBuffer {
    public:
