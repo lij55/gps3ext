@@ -35,7 +35,7 @@ int32_t s3ext_chunksize = 64 * 1024 * 1024;
 int32_t s3ext_logtype = -1;
 int32_t s3ext_logserverport = -1;
 
-int32_t s3ext_low_speed_limit = 1024;
+int32_t s3ext_low_speed_limit = 10240;
 int32_t s3ext_low_speed_time = 60;
 
 string s3ext_logserverhost;
@@ -119,8 +119,8 @@ bool InitConfig(const char* conf_path,
 
     ret = cfg->Scan("default", "low_speed_limit", "%d", &s3ext_low_speed_limit);
     if (!ret) {
-        S3INFO("Failed to get low_speed_limit, use default value %d", 1024);
-        s3ext_low_speed_limit = 1024;
+        S3INFO("Failed to get low_speed_limit, use default value %d bytes/s", 10240);
+        s3ext_low_speed_limit = 10240;
     }
 
     ret = cfg->Scan("default", "low_speed_time", "%d", &s3ext_low_speed_time);

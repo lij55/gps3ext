@@ -180,7 +180,7 @@ BlockingBuffer *BlockingBuffer::CreateBuffer(const char *url, OffsetMgr *o,
 void *DownloadThreadfunc(void *data) {
     BlockingBuffer *buffer = reinterpret_cast<BlockingBuffer *>(data);
     uint64_t filled_size = 0;
-    S3INFO("Starting the downloading thread");
+    S3INFO("Downloading thread starts");
     do {
         filled_size = buffer->Fill();
         // XXX fix the returning type
@@ -199,7 +199,7 @@ void *DownloadThreadfunc(void *data) {
             }
         }
     } while (1);
-    S3INFO("Ending the downloading thread");
+    S3INFO("Downloading thread ended");
     return NULL;
 }
 
