@@ -137,11 +137,12 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
     data = EXTPROTOCOL_GET_DATABUF(fcinfo);
     data_len = EXTPROTOCOL_GET_DATALEN(fcinfo);
-
+    uint64_t readlen = 0;
     if (data_len > 0) {
-        nread = data_len;
-        if (!myData->TransferData(data, nread))
+        readlen = data_len;
+        if (!myData->TransferData(data, readlen))
             ereport(ERROR, (0, errmsg("s3_import: could not read data")));
+        nread = (size_t)readlen;
         // S3DEBUG("read %d data from S3", nread);
     }
 
