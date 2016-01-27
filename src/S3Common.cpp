@@ -158,14 +158,15 @@ struct curl_slist *HeaderContent::GetList() {
 }
 
 UrlParser::UrlParser(const char *url) {
+    this->schema = NULL;
+    this->host = NULL;
+    this->path = NULL;
+    this->fullurl = NULL;
+
     if (!url) {
         // throw exception
         return;
     }
-
-    this->schema = NULL;
-    this->host = NULL;
-    this->path = NULL;
 
     struct http_parser_url u;
     int len, result;
@@ -238,10 +239,10 @@ Config &GetGlobalS3Config() {
 }
 
 char *get_opt_s3(const char *url, const char *key) {
-    const char *key_f;
-    const char *key_tailing;
-    char *key_val;
-    int val_len;
+    const char *key_f = NULL;
+    const char *key_tailing = NULL;
+    char *key_val = NULL;
+    int val_len = 0;
 
     if (!url || !key) {
         return NULL;
@@ -249,6 +250,7 @@ char *get_opt_s3(const char *url, const char *key) {
 
     char *key2search = (char *)malloc(strlen(key) + 3);
     if (!key2search) {
+        S3ERROR("Can't allocate memory for string");
         return NULL;
     }
 
@@ -297,7 +299,7 @@ char *get_opt_s3(const char *url, const char *key) {
 
     return key_val;
 FAIL:
-    if (!key2search) {
+    if (key2search) {
         free(key2search);
     }
     return NULL;

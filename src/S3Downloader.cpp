@@ -54,6 +54,7 @@ BlockingBuffer::BlockingBuffer(const char *url, OffsetMgr *o)
       error(false),
       readpos(0),
       realsize(0),
+      bufferdata(NULL),
       mgr(o) {
     this->nextpos = o->NextOffset();
     this->bufcap = o->Chunksize();
@@ -203,7 +204,11 @@ void *DownloadThreadfunc(void *data) {
     return NULL;
 }
 
-Downloader::Downloader(uint8_t part_num) : num(part_num) {
+Downloader::Downloader(uint8_t part_num) 
+    : num(part_num) 
+    , o(NULL)
+    ,chunkcount(0)
+    ,readlen(0) {
     this->threads = (pthread_t *)malloc(num * sizeof(pthread_t));
     if (this->threads)
         memset((void *)this->threads, 0, num * sizeof(pthread_t));
@@ -306,7 +311,8 @@ static uint64_t WriterCallback(void *contents, uint64_t size, uint64_t nmemb,
 }
 
 HTTPFetcher::HTTPFetcher(const char *url, OffsetMgr *o)
-    : BlockingBuffer(url, o), urlparser(url) {
+    : BlockingBuffer(url, o), urlparser(url)
+    , method(GET){
     this->curl = curl_easy_init();
     if (this->curl) {
         // curl_easy_setopt(this->curl, CURLOPT_VERBOSE, 1L);
@@ -479,7 +485,6 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
         return NULL;
     }
 
-    std::stringstream sstr;
     XMLInfo xml;
     xml.ctxt = NULL;
 
@@ -487,11 +492,16 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ParserCallback);
 
     HeaderContent *header = new HeaderContent();
-    sstr << bucket << ".s3.amazonaws.com";
+    if(!header) {
+        S3ERROR("Can allocate memory for header");
+        return NULL;
+    }
+
     header->Add(HOST, host);
     UrlParser p(url);
     if (!SignGETv2(header, p.Path(), cred)) {
         S3ERROR("failed to sign in DoGetXML()");
+        delete header;
         return NULL;
     }
 
@@ -517,7 +527,7 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
     }
     curl_slist_free_all(chunk);
     curl_easy_cleanup(curl);
-
+    delete header;
     return xml.ctxt;
 }
 
@@ -543,8 +553,8 @@ static bool extractContent(ListBucketResult *result, xmlNode *root_element) {
 
         if (!xmlStrcmp(cur->name, (const xmlChar *)"Contents")) {
             xmlNodePtr contNode = cur->xmlChildrenNode;
-            const char *key;
-            uint64_t size;
+            const char *key = NULL;
+            uint64_t size = 0;
             while (contNode != NULL) {
                 if (!xmlStrcmp(contNode->name, (const xmlChar *)"Key")) {
                     key = (const char *)xmlNodeGetContent(contNode);
