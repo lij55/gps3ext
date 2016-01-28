@@ -130,7 +130,7 @@ uint64_t BlockingBuffer::Fill() {
             if (readlen == -1) {
                 S3DEBUG("Failed to fetch data from libcurl");
             } else {
-                S3DEBUG("Got %lu bytes from libcurl", readlen);
+                S3DEBUG("Got %llu bytes from libcurl", readlen);
             }
         } else {
             readlen = 0;  // EOF
@@ -189,7 +189,7 @@ void *DownloadThreadfunc(void *data) {
         if (filled_size == -1) {
             S3DEBUG("Failed to fill downloading buffer");
         } else {
-            S3DEBUG("Size of filled data is %lu", filled_size);
+            S3DEBUG("Size of filled data is %llu", filled_size);
         }
         if (buffer->EndOfFile()) break;
         if (filled_size == -1) {  // Error
@@ -276,7 +276,7 @@ RETRY:
     }
     len = tmplen;
 
-    // S3DEBUG("Got %lu, %lu / %lu", len, this->readlen, filelen);
+    // S3DEBUG("Got %llu, %llu / %llu", len, this->readlen, filelen);
     return true;
 }
 
@@ -409,7 +409,7 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
             }
             continue;
         } else {
-            S3DEBUG("Fetched %lu, %lu - %lu", len, offset, offset + len - 1);
+            S3DEBUG("Fetched %llu, %llu - %llu", len, offset, offset + len - 1);
             curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &respcode);
 
             S3DEBUG("HTTP response code is %ld", respcode);
@@ -570,7 +570,7 @@ static bool extractContent(ListBucketResult *result, xmlNode *root_element) {
                     S3ERROR("Faild to create item for %s", key);
                 }
             } else {
-                S3INFO("Size of %s is %lu, skip", key, size);
+                S3INFO("Size of %s is %llu, skip", key, size);
             }
         }
         cur = cur->next;

@@ -119,9 +119,10 @@ void S3Reader::getNextDownloader() {
     }
     BucketContent *c = this->keylist->contents[this->contentindex];
     string keyurl = this->getKeyURL(c->Key());
-    S3DEBUG("key: %s, size: %lu", keyurl.c_str(), c->Size());
+    S3DEBUG("key: %s, size: %llu", keyurl.c_str(), c->Size());
 
-    if (!filedownloader->init(keyurl.c_str(), c->Size(), this->chunksize,
+    // XXX don't use strdup()
+    if (!filedownloader->init(strdup(keyurl.c_str()), c->Size(), this->chunksize,
                               &this->cred)) {
         delete this->filedownloader;
         this->filedownloader = NULL;
@@ -133,7 +134,7 @@ void S3Reader::getNextDownloader() {
     return;
 }
 
-string S3Reader::getKeyURL(const string &key) {
+string S3Reader::getKeyURL(const string key) {
     stringstream sstr;
     sstr << this->schema << "://"
          << "s3-" << this->region << ".amazonaws.com/";

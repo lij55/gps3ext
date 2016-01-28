@@ -42,7 +42,7 @@ class S3Reader : public S3ExtBase {
     virtual bool Destroy();
 
    protected:
-    virtual string getKeyURL(const string& key);
+    virtual string getKeyURL(const string key);
     void getNextDownloader();
 
     // private:

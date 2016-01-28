@@ -9,7 +9,7 @@ class S3Reader_fake : public S3Reader {
     virtual bool Destroy();
 
    protected:
-    virtual string getKeyURL(const string &key);
+    virtual string getKeyURL(const string key);
     virtual bool ValidateURL();
 };
 
@@ -56,7 +56,7 @@ bool S3Reader_fake::Init(int segid, int segnum, int chunksize) {
     return this->filedownloader ? true : false;
 }
 
-string S3Reader_fake::getKeyURL(const string &key) {
+string S3Reader_fake::getKeyURL(const string key) {
     stringstream sstr;
     sstr << this->schema << "://"
          << "localhost/";
