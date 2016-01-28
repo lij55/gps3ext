@@ -74,6 +74,7 @@ bool BlockingBuffer::Init() {
         S3ERROR("Failed to allocate Buffer, no enough memory?");
         return false;
     }
+
     pthread_mutex_init(&this->stat_mutex, NULL);
     pthread_cond_init(&this->stat_cond, NULL);
     return true;
@@ -204,11 +205,8 @@ void *DownloadThreadfunc(void *data) {
     return NULL;
 }
 
-Downloader::Downloader(uint8_t part_num) 
-    : num(part_num) 
-    , o(NULL)
-    ,chunkcount(0)
-    ,readlen(0) {
+Downloader::Downloader(uint8_t part_num)
+    : num(part_num), o(NULL), chunkcount(0), readlen(0) {
     this->threads = (pthread_t *)malloc(num * sizeof(pthread_t));
     if (this->threads)
         memset((void *)this->threads, 0, num * sizeof(pthread_t));
@@ -311,8 +309,7 @@ static uint64_t WriterCallback(void *contents, uint64_t size, uint64_t nmemb,
 }
 
 HTTPFetcher::HTTPFetcher(const char *url, OffsetMgr *o)
-    : BlockingBuffer(url, o), urlparser(url)
-    , method(GET){
+    : BlockingBuffer(url, o), urlparser(url), method(GET) {
     this->curl = curl_easy_init();
     if (this->curl) {
         // curl_easy_setopt(this->curl, CURLOPT_VERBOSE, 1L);
@@ -492,7 +489,7 @@ xmlParserCtxtPtr DoGetXML(const char *host, const char *bucket, const char *url,
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ParserCallback);
 
     HeaderContent *header = new HeaderContent();
-    if(!header) {
+    if (!header) {
         S3ERROR("Can allocate memory for header");
         return NULL;
     }

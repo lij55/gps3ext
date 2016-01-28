@@ -113,10 +113,10 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         if (!myData ||
             !myData->Init(s3ext_segid, s3ext_segnum, s3ext_chunksize)) {
             if (myData) delete myData;
-            ereport(ERROR,
-                    (0, errmsg("Failed to init S3 extension, segid = %d, "
-                               "segnum = %d, please check your net connection",
-                               s3ext_segid, s3ext_segnum)));
+            ereport(ERROR, (0, errmsg("Failed to init S3 extension, segid = "
+                                      "%d, segnum = %d, please check your "
+                                      "configurations and net connection",
+                                      s3ext_segid, s3ext_segnum)));
         }
         /*
                   if(strcasecmp(parsed_url->protocol, p_name) != 0) {

@@ -1,3 +1,6 @@
+#include "postgres.h"
+#include "funcapi.h"
+
 #include "S3ExtWrapper.h"
 #include "utils.h"
 #include "gps3conf.h"
@@ -51,14 +54,15 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
 
     // Validate url first
     if (!this->ValidateURL()) {
-        S3ERROR("The given URL(%s)is invalid", this->url.c_str());
+        S3ERROR("The given URL(%s) is invalid", this->url.c_str());
+        ereport(ERROR, (0, errmsg("ERROR: the given URL is invalid")));
         return false;
     }
 
     // TODO: As separated function for generating url
     stringstream sstr;
     sstr << "s3-" << this->region << ".amazonaws.com";
-    S3DEBUG("host url is %s", sstr.str().c_str());
+    S3DEBUG("Host url is %s", sstr.str().c_str());
     int initretry = 3;
     while (initretry--) {
         this->keylist =
@@ -68,7 +72,7 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
         if (!this->keylist) {
             S3INFO("Can't get keylist from bucket %s", this->bucket.c_str());
             if (initretry) {
-                S3INFO("retrying");
+                S3INFO("Retrying");
                 continue;
             } else {
                 S3ERROR("Quit initialization because ListBucket keeps failing");
@@ -83,6 +87,7 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
                 continue;
             } else {
                 S3ERROR("Quit initialization because keylist is empty");
+                ereport(ERROR, (0, errmsg("ERROR: the given bucket is empty")));
                 return false;
             }
         }
@@ -114,7 +119,7 @@ void S3Reader::getNextDownloader() {
     }
     BucketContent *c = this->keylist->contents[this->contentindex];
     string keyurl = this->getKeyURL(c->Key());
-    S3DEBUG("key: %s, size: %lld", keyurl.c_str(), c->Size());
+    S3DEBUG("key: %s, size: %lu", keyurl.c_str(), c->Size());
 
     if (!filedownloader->init(keyurl.c_str(), c->Size(), this->chunksize,
                               &this->cred)) {

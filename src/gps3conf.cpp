@@ -70,10 +70,12 @@ bool InitConfig(const char* conf_path,
 
     if (!s3cfg) {
         s3cfg = new Config(conf_path);
-        if (!s3cfg) {
+        if (!s3cfg->Handle()) {
 #ifndef DEBUGS3
             write_log("Failed to parse config file\n");
 #endif
+            delete s3cfg;
+            s3cfg = NULL;
             return false;
         }
     }
@@ -119,7 +121,8 @@ bool InitConfig(const char* conf_path,
 
     ret = cfg->Scan("default", "low_speed_limit", "%d", &s3ext_low_speed_limit);
     if (!ret) {
-        S3INFO("Failed to get low_speed_limit, use default value %d bytes/s", 10240);
+        S3INFO("Failed to get low_speed_limit, use default value %d bytes/s",
+               10240);
         s3ext_low_speed_limit = 10240;
     }
 
