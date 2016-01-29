@@ -1,6 +1,3 @@
-#include "postgres.h"
-#include "funcapi.h"
-
 #include "S3ExtWrapper.h"
 #include "utils.h"
 #include "gps3conf.h"
@@ -55,7 +52,6 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
     // Validate url first
     if (!this->ValidateURL()) {
         S3ERROR("The given URL(%s) is invalid", this->url.c_str());
-        ereport(ERROR, (0, errmsg("ERROR: the given URL is invalid")));
         return false;
     }
 
@@ -87,7 +83,6 @@ bool S3Reader::Init(int segid, int segnum, int chunksize) {
                 continue;
             } else {
                 S3ERROR("Quit initialization because keylist is empty");
-                ereport(ERROR, (0, errmsg("ERROR: the given bucket is empty")));
                 return false;
             }
         }
