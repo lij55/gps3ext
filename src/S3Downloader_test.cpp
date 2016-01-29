@@ -1,8 +1,10 @@
 #include "gtest/gtest.h"
 #include "S3Downloader.cpp"
+
+
 #define AWSTEST
 TEST(OffsetMgr, simple) {
-    InitLog();
+
     OffsetMgr *o = new OffsetMgr(4096, 1000);
     Range r = o->NextOffset();
     EXPECT_EQ(r.offset, 0);
@@ -58,11 +60,11 @@ TEST(ListBucket, fake) {
 }
 
 #define S3HOST "s3-us-west-2.amazonaws.com"
-#define S3BUCKET "metro.pivotal.io"
-#define S3PREFIX "data"
+#define S3BUCKET "s3test.pivotal.io"
+#define S3PREFIX "dataset1/small17"
 
-#define KEYID "AKIAIAFSMJUMQWXB2PUQ"
-#define SECRET "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"
+#define KEYID "AKIAJ4QMYJ6SU6TVBL3Q"
+#define SECRET "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"
 
 #ifdef AWSTEST
 
@@ -205,25 +207,35 @@ TEST(HTTPDownloader, random_parameters_256M) {
 TEST(S3Downloader, simple) {
     printf("try downloading data0014\n");
     S3DwonloadTest(
-        "http://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/data0014",
-        4420346, "68c4a63b721e7af0ae945ce109ca87ad", 4, 1024 * 1024, 65536);
+				   "http://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/data0014",
+				   4420346, "68c4a63b721e7af0ae945ce109ca87ad", 4, 1024 * 1024, 65536);
 
     printf("try downloading data0016\n");
     S3DwonloadTest(
-        "http://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/data0016",
+				   "http://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/data0016",
         2536018, "0fd502a303eb8f138f5916ec357721b1", 4, 1024 * 1024, 65536);
 }
 
 TEST(S3Downloader, httpssimple) {
     printf("try downloading data0014\n");
     S3DwonloadTest(
-        "https://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/data0014",
+				   "http://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/data0014",
         4420346, "68c4a63b721e7af0ae945ce109ca87ad", 4, 1024 * 1024, 65536);
 
     printf("try downloading data0016\n");
     S3DwonloadTest(
-        "https://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/data0016",
+				   "http://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/data0016",
         2536018, "0fd502a303eb8f138f5916ec357721b1", 4, 1024 * 1024, 65536);
+}
+
+TEST(S3Downloader, bigfile) {
+	// InitLog();
+	// s3ext_loglevel = EXT_DEBUG;
+	// s3ext_logtype = STDERR_LOG;
+	printf("try downloading big file 1\n");
+    S3DwonloadTest(
+				   "http://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/hugefile/airlinedata1.csv",
+        4664425994, "f5811ad92c994f1d6913d5338575fe38", 4, 64 * 1024 * 1024, 65536);
 }
 
 #endif  // AWSTEST
