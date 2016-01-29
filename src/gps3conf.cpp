@@ -70,7 +70,7 @@ bool InitConfig(const char* conf_path,
 
     if (!s3cfg) {
         s3cfg = new Config(conf_path);
-        if (!s3cfg->Handle()) {
+        if (!s3cfg || !s3cfg->Handle()) {
 #ifndef DEBUGS3
             write_log("Failed to parse config file\n");
 #endif
