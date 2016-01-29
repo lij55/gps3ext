@@ -1,5 +1,5 @@
 CPP = g++
-CFLAGS = -g3 -std=c++98 -fPIC -fprofile-arcs -ftest-coverage
+CFLAGS = -g3 -std=c++98 -fPIC -fprofile-arcs -ftest-coverage -DDEBUGS3 -DAWSTEST
 INCLUDES = -Isrc -Ilib -I/usr/include/libxml2
 LDFLAGS = -lpthread -lcrypto -lcurl -lxml2 -lgcov
 
@@ -32,7 +32,7 @@ gtest_main.a : gtest-all.o gtest_main.o
 	$(AR) $(ARFLAGS) $@ $^
 
 %.o: %.cpp
-	$(CPP) $(CFLAGS) -DDEBUGS3 $(INCLUDES) -c $< -o $@
+	$(CPP) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 buildtest: gtest_main.a $(testobjs)
 	$(CPP) $(CPPFLAGS) $(CXXFLAGS) $^ -o $(testapp) $(LDFLAGS)

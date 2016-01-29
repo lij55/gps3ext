@@ -74,8 +74,10 @@ bool InitConfig(const char* conf_path,
 #ifndef DEBUGS3
             write_log("Failed to parse config file\n");
 #endif
-            delete s3cfg;
-            s3cfg = NULL;
+            if (s3cfg) {
+                delete s3cfg;
+                s3cfg = NULL;
+            }
             return false;
         }
     }
@@ -128,7 +130,8 @@ bool InitConfig(const char* conf_path,
 
     ret = cfg->Scan("default", "low_speed_time", "%d", &s3ext_low_speed_time);
     if (!ret) {
-        S3INFO("Failed to get low_speed_time, use default value %d", 60);
+        S3INFO("Failed to get low_speed_time, use default value %d seconds",
+               60);
         s3ext_low_speed_time = 60;
     }
 

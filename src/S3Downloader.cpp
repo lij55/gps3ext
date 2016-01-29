@@ -360,8 +360,8 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
     while (retry_time--) {
         // "Don't call cleanup() if you intend to transfer more files, re-using
         // handles is a key to good performance with libcurl."
-		if(retry_time != 2) // sleep if retry
-			usleep(3*1000*1000);
+        if (retry_time != 2)  // sleep if retry
+            usleep(3 * 1000 * 1000);
 
         bi.buf = data;
         bi.maxsize = len;
@@ -382,7 +382,7 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
         this->AddHeaderField(RANGE, rangebuf);
         if (!this->processheader()) {
             S3ERROR("Failed to sign while fetching data, retry");
-			continue;
+            continue;
         }
 
         chunk = this->headers.GetList();
@@ -397,15 +397,15 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
         }
 
         if (res != CURLE_OK) {
-            S3ERROR("curl_easy_perform() failed: %s, retry", curl_easy_strerror(res));
+            S3ERROR("curl_easy_perform() failed: %s, retry",
+                    curl_easy_strerror(res));
             bi.len = -1;
             continue;
         } else {
-			
             curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &respcode);
-            S3DEBUG("Fetched %llu, %llu - %llu, response code is %ld", 
-					len, offset, offset + len - 1, respcode);
-			
+            S3DEBUG("Fetched %llu, %llu - %llu, response code is %ld", len,
+                    offset, offset + len - 1, respcode);
+
             if ((respcode != 200) && (respcode != 206)) {
                 S3ERROR("get %.*s, retry", (int)bi.len, data);
                 bi.len = -1;
@@ -415,11 +415,11 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
             }
         }
     }
-	
+
     if (curl_handle) {
         this->curl = curl_handle;
     }
-	curl_slist_free_all(chunk);
+    curl_slist_free_all(chunk);
     return bi.len;
 }
 
