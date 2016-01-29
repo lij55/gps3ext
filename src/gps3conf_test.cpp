@@ -23,7 +23,7 @@ TEST(Config, basic) {
     EXPECT_EQ(64 * 1024 * 1024 + 1, s3ext_chunksize);
 
     EXPECT_EQ(EXT_DEBUG, s3ext_loglevel);
-    EXPECT_EQ(INTERNAL_LOG, s3ext_logtype);
+    EXPECT_EQ(STDERR_LOG, s3ext_logtype);
 
     EXPECT_EQ(1111, s3ext_logserverport);
     EXPECT_STREQ("127.0.0.1", s3ext_logserverhost.c_str());

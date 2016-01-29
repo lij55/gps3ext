@@ -61,13 +61,11 @@ TEST(ListBucket, fake) {
 #define S3BUCKET "s3test.pivotal.io"
 #define S3PREFIX "dataset1/small17"
 
-#define KEYID ""
-#define SECRET ""
 
 #ifdef AWSTEST
 
 TEST(ListBucket, s3) {
-    S3Credential g_cred = {KEYID, SECRET};
+    S3Credential g_cred = {s3ext_accessid, s3ext_secret};
 
     ListBucketResult *r =
         ListBucket("https", S3HOST, S3BUCKET, S3PREFIX, g_cred);
@@ -91,7 +89,7 @@ TEST(ListBucket, s3) {
 void DownloadTest(const char *url, uint64_t file_size, const char *md5_str,
                   uint8_t thread_num, uint64_t chunk_size, uint64_t buffer_size,
                   bool use_credential) {
-    S3Credential g_cred = {KEYID, SECRET};
+    S3Credential g_cred = {s3ext_accessid, s3ext_secret};
 
     uint64_t buf_len = buffer_size;
     char *buf = (char *)malloc(buffer_size);
