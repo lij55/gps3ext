@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "S3Downloader.cpp"
-
+#define AWSTEST
 TEST(OffsetMgr, simple) {
     InitLog();
     OffsetMgr *o = new OffsetMgr(4096, 1000);
@@ -69,7 +69,7 @@ TEST(ListBucket, fake) {
 TEST(ListBucket, s3) {
     S3Credential g_cred = {KEYID, SECRET};
 
-    ListBucketResult *r = ListBucket(S3HOST, S3BUCKET, S3PREFIX, g_cred);
+    ListBucketResult *r = ListBucket("https", S3HOST, S3BUCKET, S3PREFIX, g_cred);
 
     ASSERT_NE(r, (void *)NULL);
     EXPECT_EQ(r->contents.size(), 16);
@@ -224,11 +224,6 @@ TEST(S3Downloader, httpssimple) {
     S3DwonloadTest(
         "https://s3-us-west-2.amazonaws.com/metro.pivotal.io/data/data0016",
         2536018, "0fd502a303eb8f138f5916ec357721b1", 4, 1024 * 1024, 65536);
-}
-
-TEST(S3Downloader, bigfile) {
-    S3DwonloadTest("http://s3-us-west-2.amazonaws.com/test", ,
-                   "68c4a63b721e7af0ae945ce109ca87ad", 4, 1024 * 1024, 65536);
 }
 
 #endif  // AWSTEST

@@ -360,6 +360,8 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
     while (retry_time--) {
         // "Don't call cleanup() if you intend to transfer more files, re-using
         // handles is a key to good performance with libcurl."
+		if(retry_time != 2) // sleep if retry
+			usleep(3*1000*1000);
 
         bi.buf = data;
         bi.maxsize = len;
@@ -380,10 +382,7 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
         this->AddHeaderField(RANGE, rangebuf);
         if (!this->processheader()) {
             S3ERROR("Failed to sign while fetching data, retry");
-            if (retry_time <= 2) {
-                usleep(2000000);
-            }
-            continue;
+			continue;
         }
 
         chunk = this->headers.GetList();
@@ -392,46 +391,35 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
         CURLcode res = curl_easy_perform(curl_handle);
 
         if (res == CURLE_OPERATION_TIMEDOUT) {
-            S3INFO("Net speed is too slow, retry");
+            S3WARN("Net speed is too slow, retry");
             bi.len = -1;
-            if (retry_time <= 2) {
-                usleep(5000000);
-            }
             continue;
         }
 
         if (res != CURLE_OK) {
-            S3ERROR("curl_easy_perform() failed: %s", curl_easy_strerror(res));
+            S3ERROR("curl_easy_perform() failed: %s, retry", curl_easy_strerror(res));
             bi.len = -1;
-            S3INFO("Failed to perform curl, retry");
-            if (retry_time <= 2) {
-                usleep(3000000);
-            }
             continue;
         } else {
-            S3DEBUG("Fetched %llu, %llu - %llu", len, offset, offset + len - 1);
+			
             curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &respcode);
-
-            S3DEBUG("HTTP response code is %ld", respcode);
-
+            S3DEBUG("Fetched %llu, %llu - %llu, response code is %ld", 
+					len, offset, offset + len - 1, respcode);
+			
             if ((respcode != 200) && (respcode != 206)) {
-                S3ERROR("%.*s", (int)bi.len, data);
+                S3ERROR("get %.*s, retry", (int)bi.len, data);
                 bi.len = -1;
-                S3INFO("HTTP respcode is weird, retry");
-                if (retry_time <= 2) {
-                    usleep(3000000);
-                }
                 continue;
             } else {
                 break;
             }
         }
     }
-
+	
     if (curl_handle) {
         this->curl = curl_handle;
     }
-
+	curl_slist_free_all(chunk);
     return bi.len;
 }
 
