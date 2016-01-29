@@ -112,11 +112,11 @@ class DataBuffer {
 
 class Config {
    public:
-    Config(const char* filename);
+    Config(string  filename);
     ~Config();
-    const char* Get(const char* sec, const char* key, const char* defaultvalue);
-    bool Scan(const char* sec, const char* key, const char* scanfmt, void* dst);
-    const char* Handle() { return (const char*)this->_conf; };
+    string Get(string sec, string key, string defaultvalue);
+    bool Scan(string sec, string key, const char* scanfmt, void* dst);
+    void* Handle() { return (void*)this->_conf; };
 
    private:
     ini_t* _conf;

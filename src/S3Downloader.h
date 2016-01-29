@@ -47,9 +47,9 @@ class OffsetMgr {
 
 class BlockingBuffer {
    public:
-    static BlockingBuffer* CreateBuffer(const char* url, OffsetMgr* o,
+    static BlockingBuffer* CreateBuffer(string url, OffsetMgr* o,
                                         S3Credential* pcred);
-    BlockingBuffer(const char* url, OffsetMgr* o);
+    BlockingBuffer(string url, OffsetMgr* o);
     virtual ~BlockingBuffer();
     bool Init();
     bool EndOfFile() { return this->eof; };
@@ -63,7 +63,7 @@ class BlockingBuffer {
 
     /* data */
    protected:
-    const char* sourceurl;
+    string sourceurl;
     uint64_t bufcap;
     virtual uint64_t fetchdata(uint64_t offset, char* data, uint64_t len) = 0;
 
@@ -83,7 +83,7 @@ class BlockingBuffer {
 struct Downloader {
     Downloader(uint8_t part_num);
     ~Downloader();
-    bool init(const char* url, uint64_t size, uint64_t chunksize,
+    bool init(string url, uint64_t size, uint64_t chunksize,
               S3Credential* pcred);
     bool get(char* buf, uint64_t& len);
     void destroy();
@@ -107,10 +107,10 @@ struct Bufinfo {
 
 class HTTPFetcher : public BlockingBuffer {
    public:
-    HTTPFetcher(const char* url, OffsetMgr* o);
+    HTTPFetcher(string url, OffsetMgr* o);
     ~HTTPFetcher();
     bool SetMethod(Method m);
-    bool AddHeaderField(HeaderField f, const char* v);
+    bool AddHeaderField(HeaderField f, string v);
 
    protected:
     uint64_t fetchdata(uint64_t offset, char* data, uint64_t len);
@@ -123,7 +123,7 @@ class HTTPFetcher : public BlockingBuffer {
 
 class S3Fetcher : public HTTPFetcher {
    public:
-    S3Fetcher(const char* url, OffsetMgr* o, const S3Credential& cred);
+    S3Fetcher(string url, OffsetMgr* o, const S3Credential& cred);
     ~S3Fetcher(){};
 
    protected:
@@ -136,36 +136,36 @@ class S3Fetcher : public HTTPFetcher {
 struct BucketContent;
 
 struct ListBucketResult {
-    const char* Name;
-    const char* Prefix;
+    string  Name;
+    string  Prefix;
     unsigned int MaxKeys;
     vector<BucketContent*> contents;
 };
 
-BucketContent* CreateBucketContentItem(const char* key, uint64_t size);
+BucketContent* CreateBucketContentItem(string key, uint64_t size);
 
 struct BucketContent {
-    friend BucketContent* CreateBucketContentItem(const char* key,
+    friend BucketContent* CreateBucketContentItem(string key,
                                                   uint64_t size);
     BucketContent();
     ~BucketContent();
-    const char* Key() const { return this->key; };
+    string  Key() const { return this->key; };
     uint64_t Size() const { return this->size; };
 
    private:
     // BucketContent(const BucketContent& b) = delete;
     // BucketContent operator=(const BucketContent& b) = delete;
 
-    const char* key;
+    string  key;
     // const char* etags;
     uint64_t size;
 };
 
 // need free
-ListBucketResult* ListBucket(const char* schema, const char* host,
-                             const char* bucket, const char* path,
+ListBucketResult* ListBucket(string schema, string host,
+                             string bucket, string path,
                              const S3Credential& cred);
 
-ListBucketResult* ListBucket_FakeHTTP(const char* host, const char* bucket);
+ListBucketResult* ListBucket_FakeHTTP(string host, string bucket);
 
 #endif

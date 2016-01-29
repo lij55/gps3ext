@@ -268,8 +268,8 @@ uint64_t DataBuffer::append(const char *buf, uint64_t len) {
     return copylen;
 }
 
-Config::Config(const char *filename) : _conf(NULL) {
-    if (filename) this->_conf = ini_load(filename);
+Config::Config(string filename) : _conf(NULL) {
+    if (filename!="") this->_conf = ini_load(filename.c_str());
     if (this->_conf == NULL) {
 #ifndef DEBUGS3
         write_log("Failed to load config file\n");
@@ -281,24 +281,24 @@ Config::~Config() {
     if (this->_conf) ini_free(this->_conf);
 }
 
-const char *Config::Get(const char *sec, const char *key,
-                        const char *defaultvalue) {
-    const char *ret = defaultvalue;
-    if (!key || !sec) return ret;
+string Config::Get(string sec, string key,
+                        string defaultvalue) {
+    string ret = defaultvalue;
+    if ((key=="") || (sec=="")) return ret;
 
     if (this->_conf) {
-        const char *tmp = ini_get(this->_conf, sec, key);
+        const char *tmp = ini_get(this->_conf, sec.c_str(), key.c_str());
         if (tmp) ret = tmp;
     }
     return ret;
 }
 
-bool Config::Scan(const char *sec, const char *key, const char *scanfmt,
+bool Config::Scan(string sec, string key, const char *scanfmt,
                   void *dst) {
-    if (!key || !sec) return false;
+    if ((key=="") || (sec=="")) return false;
 
     if (this->_conf) {
-        return ini_sget(this->_conf, sec, key, scanfmt, dst);
+        return ini_sget(this->_conf, sec.c_str(), key.c_str(), scanfmt, dst);
     }
     return false;
 }

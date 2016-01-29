@@ -9,12 +9,12 @@
 using std::stringstream;
 using std::string;
 
-S3ExtBase *CreateExtWrapper(const char *url) {
+S3ExtBase *CreateExtWrapper(string url) {
     S3ExtBase *ret = new S3Reader(url);
     return ret;
 }
 
-S3ExtBase::S3ExtBase(const char *url) {
+S3ExtBase::S3ExtBase(string url) {
     this->url = url;
 
     // get following from config
@@ -35,7 +35,7 @@ S3ExtBase::~S3ExtBase() {}
 
 S3Reader::~S3Reader() {}
 
-S3Reader::S3Reader(const char *url) : S3ExtBase(url) {
+S3Reader::S3Reader(string url) : S3ExtBase(url) {
     this->contentindex = -1;
     this->filedownloader = NULL;
     this->keylist = NULL;

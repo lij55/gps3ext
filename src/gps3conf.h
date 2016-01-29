@@ -59,6 +59,6 @@ extern int s3ext_low_speed_time;
 
 // not thread safe!!
 // Called only once.
-bool InitConfig(const char* path, const char* section);
+bool InitConfig(string path, string section);
 
 void ClearConfig();

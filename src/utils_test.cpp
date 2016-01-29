@@ -167,18 +167,18 @@ TEST(databuffer, simple) {
 
 TEST(utils, Config) {
     Config c("test/s3.conf");
-    EXPECT_STREQ(c.Get("configtest", "config1", "aaaaaa"), "abcdefg");
-    EXPECT_STREQ(c.Get("configtest", "config2", "tttt"), "12345");
-    EXPECT_STREQ(c.Get("configtest", "config3", "tttt"), "aaaaa");
-    EXPECT_STREQ(c.Get("configtest", "config4", "tttt"), "123");
-    EXPECT_STREQ(c.Get("configtest", "config5", "tttt"), "tttt");
-    EXPECT_STREQ(c.Get("configtest", "config6", "tttt"), "tttt");
-    EXPECT_STREQ(c.Get("configtest", "config7", "xx"), "xx");
+    EXPECT_STREQ(c.Get("configtest", "config1", "aaaaaa").c_str(), "abcdefg");
+    EXPECT_STREQ(c.Get("configtest", "config2", "tttt").c_str(), "12345");
+    EXPECT_STREQ(c.Get("configtest", "config3", "tttt").c_str(), "aaaaa");
+    EXPECT_STREQ(c.Get("configtest", "config4", "tttt").c_str(), "123");
+    EXPECT_STREQ(c.Get("configtest", "config5", "tttt").c_str(), "tttt");
+    EXPECT_STREQ(c.Get("configtest", "config6", "tttt").c_str(), "tttt");
+    EXPECT_STREQ(c.Get("configtest", "config7", "xx").c_str(), "xx");
 
-    EXPECT_STREQ(c.Get("configtest", NULL, "xx"), "xx");
-    EXPECT_EQ(c.Get("configtest", "config7", NULL), (void *)NULL);
+    EXPECT_STREQ(c.Get("configtest", NULL, "xx").c_str(), "xx");
+    EXPECT_STREQ(c.Get("configtest", "config7", NULL).c_str(), "");
 
-    EXPECT_STREQ(c.Get("configtest", "", "xx"), "xx");
+    EXPECT_STREQ(c.Get("configtest", "", "xx").c_str(), "xx");
 
     uint32_t value = 0;
     EXPECT_TRUE(c.Scan("configtest", "config2", "%ud", &value));

@@ -51,7 +51,7 @@ TEST(ListBucket, fake) {
     vector<BucketContent *>::iterator i;
     for (i = r->contents.begin(); i != r->contents.end(); i++) {
         BucketContent *p = *i;
-        sprintf(urlbuf, "http://%s/%s/%s", HOSTSTR, BUCKETSTR, p->Key());
+        sprintf(urlbuf, "http://%s/%s/%s", HOSTSTR, BUCKETSTR, p->Key().c_str());
         printf("%s, %llu\n", urlbuf, p->Size());
     }
     delete r;
@@ -77,7 +77,7 @@ TEST(ListBucket, s3) {
     vector<BucketContent *>::iterator i;
     for (i = r->contents.begin(); i != r->contents.end(); i++) {
         BucketContent *p = *i;
-        sprintf(urlbuf, "http://%s/%s/%s", S3HOST, S3BUCKET, p->Key());
+        sprintf(urlbuf, "http://%s/%s/%s", S3HOST, S3BUCKET, p->Key().c_str());
         printf("%s, %d\n", urlbuf, p->Size());
     }
 

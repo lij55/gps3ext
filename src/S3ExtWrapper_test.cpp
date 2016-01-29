@@ -3,7 +3,7 @@
 
 class S3Reader_fake : public S3Reader {
    public:
-    S3Reader_fake(const char *url);
+    S3Reader_fake(string url);
     virtual ~S3Reader_fake();
     virtual bool Init(int segid, int segnum, int chunksize);
     virtual bool Destroy();
@@ -13,7 +13,7 @@ class S3Reader_fake : public S3Reader {
     virtual bool ValidateURL();
 };
 
-S3Reader_fake::S3Reader_fake(const char *url) : S3Reader(url) {}
+S3Reader_fake::S3Reader_fake(string url) : S3Reader(url) {}
 
 S3Reader_fake::~S3Reader_fake() {}
 

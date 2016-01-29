@@ -16,7 +16,7 @@
 using std::string;
 using std::stringstream;
 
-bool SignGETv2(HeaderContent *h, const char *path_with_query,
+bool SignGETv2(HeaderContent *h, string path_with_query,
                const S3Credential &cred) {
     char timestr[64];
     char tmpbuf[20];  // SHA_DIGEST_LENGTH is 20
@@ -39,12 +39,13 @@ bool SignGETv2(HeaderContent *h, const char *path_with_query,
     sstr << "AWS " << cred.keyid << ":" << signature;
     free(signature);
     // S3DEBUG("%s", sstr.str().c_str());
-    h->Add(AUTHORIZATION, sstr.str().c_str());
+    h->Add(AUTHORIZATION, sstr.str());
 
     return true;
 }
 
-bool SignPUTv2(HeaderContent *h, const char *path_with_query,
+#if 0
+bool SignPUTv2(HeaderContent *h, string path_with_query,
                const S3Credential &cred) {
     char timestr[64];
     char tmpbuf[20];  // SHA_DIGEST_LENGTH is 20
@@ -103,6 +104,7 @@ bool SignPOSTv2(HeaderContent *h, const char *path_with_query,
 
     return true;
 }
+#endif
 
 const char *GetFieldString(HeaderField f) {
     switch (f) {
@@ -137,7 +139,7 @@ bool HeaderContent::Add(HeaderField f, const std::string &v) {
         return false;
     }
 }
-
+/*
 const char *HeaderContent::Get(HeaderField f) {
     const char *ret = NULL;
     if (!this->fields[f].empty()) {
@@ -145,7 +147,7 @@ const char *HeaderContent::Get(HeaderField f) {
     }
     return ret;
 }
-
+*/
 struct curl_slist *HeaderContent::GetList() {
     struct curl_slist *chunk = NULL;
     std::map<HeaderField, std::string>::iterator it;
@@ -233,10 +235,6 @@ uint64_t ParserCallback(void *contents, uint64_t size, uint64_t nmemb,
     return realsize;
 }
 
-Config &GetGlobalS3Config() {
-    static Config s3cfg("s3config.ini");
-    return s3cfg;
-}
 
 char *get_opt_s3(const char *url, const char *key) {
     const char *key_f = NULL;
