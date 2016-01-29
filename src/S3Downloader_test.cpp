@@ -1,6 +1,11 @@
 #include "gtest/gtest.h"
 #include "S3Downloader.cpp"
+
 #define AWSTEST
+
+#define KEYID "AKIAIAFSMJUMQWXB2PUQ"
+#define SECRET "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"
+
 TEST(OffsetMgr, simple) {
     InitLog();
     OffsetMgr *o = new OffsetMgr(4096, 1000);
@@ -61,15 +66,13 @@ TEST(ListBucket, fake) {
 #define S3BUCKET "metro.pivotal.io"
 #define S3PREFIX "data"
 
-#define KEYID "AKIAIAFSMJUMQWXB2PUQ"
-#define SECRET "oCTLHlu3qJ+lpBH/+JcIlnNuDebFObFNFeNvzBF0"
-
 #ifdef AWSTEST
 
 TEST(ListBucket, s3) {
     S3Credential g_cred = {KEYID, SECRET};
 
-    ListBucketResult *r = ListBucket("https", S3HOST, S3BUCKET, S3PREFIX, g_cred);
+    ListBucketResult *r =
+        ListBucket("https", S3HOST, S3BUCKET, S3PREFIX, g_cred);
 
     ASSERT_NE(r, (void *)NULL);
     EXPECT_EQ(r->contents.size(), 16);

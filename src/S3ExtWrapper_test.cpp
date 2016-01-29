@@ -1,6 +1,9 @@
 #include "gtest/gtest.h"
 #include "S3ExtWrapper.cpp"
 
+#define KEYID "AKIAIAFSMJUMQWXB2PUQ"
+#define SECRET "oCTLHlu3qJ+lpBH/+JcIlnNuDebFObFNFeNvzBF0"
+
 class S3Reader_fake : public S3Reader {
    public:
     S3Reader_fake(const char *url);
@@ -82,6 +85,12 @@ bool S3Reader_fake::ValidateURL() {
 
 void ExtWrapperTest(const char *url, uint64_t buffer_size, const char *md5_str,
                     int segid, int segnum, uint64_t chunksize) {
+    InitConfig("/tmp/s3/s3.conf", NULL);
+    s3ext_secret = string("SECRET");
+    s3ext_accessid = string("KEYID");
+    s3ext_segid = segid;
+    s3ext_segnum = segnum;
+
     MD5Calc m;
     S3ExtBase *myData;
     uint64_t nread = 0;

@@ -107,7 +107,7 @@ char *Base64Encode(const char *buffer,
 
     BIO_set_close(bio, BIO_NOCLOSE);
     BIO_free(bio);
-	BIO_free(b64);
+    BIO_free(b64);
     return ret;  // s
 }
 
