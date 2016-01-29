@@ -74,8 +74,10 @@ bool InitConfig(const char* conf_path,
 #ifndef DEBUGS3
             write_log("Failed to parse config file\n");
 #endif
-            delete s3cfg;
-            s3cfg = NULL;
+            if (s3cfg) {
+                delete s3cfg;
+                s3cfg = NULL;
+            }
             return false;
         }
     }
