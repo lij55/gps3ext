@@ -85,7 +85,7 @@ bool S3Reader_fake::ValidateURL() {
 
 void ExtWrapperTest(const char *url, uint64_t buffer_size, const char *md5_str,
                     int segid, int segnum, uint64_t chunksize) {
-    InitConfig("/tmp/s3/s3.conf", NULL);
+    InitConfig(NULL, NULL);
     s3ext_secret = string("SECRET");
     s3ext_accessid = string("KEYID");
     s3ext_segid = segid;

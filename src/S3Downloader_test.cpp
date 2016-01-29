@@ -1,8 +1,6 @@
 #include "gtest/gtest.h"
 #include "S3Downloader.cpp"
 
-#define AWSTEST
-
 #define KEYID "AKIAIAFSMJUMQWXB2PUQ"
 #define SECRET "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"
 
