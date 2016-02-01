@@ -15,9 +15,8 @@ CREATE PROTOCOL s3 (
 select * from pg_extprotocol;
 
 drop external table s3example;
-create READABLE external table s3example (date text, time text, open float, high float,
-	low float, volume int) location('s3://s3-us-west-2.amazonaws.com/metro.pivotal.io/smalldata config=/home/gpadmin/work/bootgpdb/data/gpseg0/s3/s3.conf') FORMAT 'csv';
-
+create READABLE external table s3example (Year text, Month text, DayofMonth text, DayOfWeek text, DepTime text, CRSDepTime text, ArrTime text,CRSArrTime text, UniqueCarrier text, FlightNum text,TailNum text, ActualElapsedTime text, CRSElapsedTime text, AirTime text, ArrDelay text, DepDelay text, Origin text, Dest text, Distance text, TaxiIn text, TaxiOut text, Cancelled text, CancellationCode text, Diverted text, CarrierDelay text, WeatherDelay text, NASDelay text, SecurityDelay text, LateAircraftDelay text) location('s3://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/normal/ config=/home/gpadmin/data/gps3ext/test/s3.conf') format 'csv' LOG ERRORS SEGMENT REJECT LIMIT 100 PERCENT;
+-- select * into s3data from s3example;
 SELECT count(*) FROM s3example;
 
 -- =======

@@ -110,7 +110,7 @@ void ExtWrapperTest(const char *url, uint64_t buffer_size, const char *md5_str,
     }
 
     EXPECT_STREQ(md5_str, m.Get());
-
+    myData->Destroy();
     delete myData;
     free(buf);
 }
@@ -156,6 +156,24 @@ TEST(ExtWrapper, normal_4segs) {
                    64 * 1024 * 1024);
     ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/",
                    64 * 1024, "dceb001d03d54d61874d27c9f04596b1", 3, 4,
+                   64 * 1024 * 1024);
+}
+
+TEST(ExtWrapper, huge_1seg) {
+	ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/hugefile/",
+                   64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 0, 1,
+                   64 * 1024 * 1024);
+}
+
+TEST(ExtWrapper, normal2_3segs) {
+	ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/normal/",
+                   64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 0, 3,
+                   64 * 1024 * 1024);
+	ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/normal/",
+                   64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 1, 3,
+                   64 * 1024 * 1024);
+	ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/normal/",
+                   64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 2, 3,
                    64 * 1024 * 1024);
 }
 

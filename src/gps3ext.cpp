@@ -62,7 +62,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
     if (myData == NULL) {
         /* first call. do any desired init */
-
+        curl_global_init(CURL_GLOBAL_ALL);
         const char *p_name = "s3";
         char *url_with_options = EXTPROTOCOL_GET_URL(fcinfo);
 
@@ -84,7 +84,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
             config_path = strdup("./s3/s3.conf");
         }
 
-        bool result = InitConfig(config_path, NULL);
+        bool result = InitConfig(config_path, "");
         if (!result) {
             ereport(ERROR,
                     (0, errmsg("Can't find config file %s", config_path)));
