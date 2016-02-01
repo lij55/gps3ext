@@ -46,14 +46,14 @@ TEST(S3Common, HeaderContent) {
         ASSERT_TRUE(h->Add(CONTENTMD5, MD5STR));
     }
 
-    // test Get
+// test Get
 #if 0
     if (h) {
         EXPECT_STREQ(HOSTSTR, h->Get(HOST));
         EXPECT_STREQ(RANGESTR, h->Get(RANGE));
         EXPECT_STREQ(MD5STR, h->Get(CONTENTMD5));
     }
-#endif 
+#endif
     // test GetList
     if (h) {
         curl_slist *l = h->GetList();
@@ -154,4 +154,26 @@ TEST(S3Common, UrlOptions) {
               get_opt_s3("s3://neverland.amazonaws.com secret=secret_test "
                          "chunksize=3456789 KingOfTheWorld=sanpang ",
                          "chunk size"));
+}
+
+TEST(S3Common, TruncateOptions) {
+    EXPECT_STREQ(
+        "s3://neverland.amazonaws.com",
+        truncate_options("s3://neverland.amazonaws.com secret=secret_test"));
+
+    EXPECT_STREQ(
+        "s3://neverland.amazonaws.com",
+        truncate_options(
+            "s3://neverland.amazonaws.com accessid=\".\\!@#$%^&*()DFGHJK\""));
+
+    EXPECT_STREQ(
+        "s3://neverland.amazonaws.com",
+        truncate_options("s3://neverland.amazonaws.com secret=secret_test "
+                         "accessid=\".\\!@#$%^&*()DFGHJK\" chunksize=3456789"));
+
+    EXPECT_STREQ(
+        "s3://neverland.amazonaws.com",
+        truncate_options("s3://neverland.amazonaws.com secret=secret_test "
+                         "blah= accessid=\".\\!@#$%^&*()DFGHJK\" "
+                         "chunksize=3456789 KingOfTheWorld=sanpang"));
 }

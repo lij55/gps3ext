@@ -59,9 +59,8 @@ Config* s3cfg = NULL;
 
 // not thread safe!!
 // Called only once.
-bool InitConfig(string conf_path,
-                string section /*not used currently*/) {
-    if (conf_path=="") {
+bool InitConfig(string conf_path, string section /*not used currently*/) {
+    if (conf_path == "") {
 #ifndef DEBUGS3
         write_log("Config file is not specified\n");
 #endif

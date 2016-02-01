@@ -2,7 +2,6 @@
 #include "S3Downloader.cpp"
 
 TEST(OffsetMgr, simple) {
-
     OffsetMgr *o = new OffsetMgr(4096, 1000);
     Range r = o->NextOffset();
     EXPECT_EQ(r.offset, 0);
@@ -51,7 +50,8 @@ TEST(ListBucket, fake) {
     vector<BucketContent *>::iterator i;
     for (i = r->contents.begin(); i != r->contents.end(); i++) {
         BucketContent *p = *i;
-        sprintf(urlbuf, "http://%s/%s/%s", HOSTSTR, BUCKETSTR, p->Key().c_str());
+        sprintf(urlbuf, "http://%s/%s/%s", HOSTSTR, BUCKETSTR,
+                p->Key().c_str());
         printf("%s, %llu\n", urlbuf, p->Size());
     }
     delete r;
@@ -60,7 +60,6 @@ TEST(ListBucket, fake) {
 #define S3HOST "s3-us-west-2.amazonaws.com"
 #define S3BUCKET "s3test.pivotal.io"
 #define S3PREFIX "dataset1/small17"
-
 
 #ifdef AWSTEST
 
@@ -202,37 +201,43 @@ TEST(HTTPDownloader, random_parameters_256M) {
 
 #ifdef AWSTEST
 TEST(S3Downloader, simple) {
-    printf("try downloading data0014\n");
+    printf("Try downloading data0014\n");
     S3DwonloadTest(
-				   "http://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/data0014",
-				   4420346, "68c4a63b721e7af0ae945ce109ca87ad", 4, 1024 * 1024, 65536);
+        "http://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/"
+        "data0014",
+        4420346, "68c4a63b721e7af0ae945ce109ca87ad", 4, 1024 * 1024, 65536);
 
-    printf("try downloading data0016\n");
+    printf("Try downloading data0016\n");
     S3DwonloadTest(
-				   "http://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/data0016",
+        "http://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/"
+        "data0016",
         2536018, "0fd502a303eb8f138f5916ec357721b1", 4, 1024 * 1024, 65536);
 }
 
 TEST(S3Downloader, httpssimple) {
-    printf("try downloading data0014\n");
+    printf("Try downloading data0014\n");
     S3DwonloadTest(
-				   "http://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/data0014",
+        "http://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/"
+        "data0014",
         4420346, "68c4a63b721e7af0ae945ce109ca87ad", 4, 1024 * 1024, 65536);
 
-    printf("try downloading data0016\n");
+    printf("Try downloading data0016\n");
     S3DwonloadTest(
-				   "http://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/data0016",
+        "http://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/"
+        "data0016",
         2536018, "0fd502a303eb8f138f5916ec357721b1", 4, 1024 * 1024, 65536);
 }
 
 TEST(S3Downloader, bigfile) {
-	// InitLog();
-	// s3ext_loglevel = EXT_DEBUG;
-	// s3ext_logtype = STDERR_LOG;
-	printf("try downloading big file 1\n");
+    // InitLog();
+    // s3ext_loglevel = EXT_DEBUG;
+    // s3ext_logtype = STDERR_LOG;
+    printf("Try downloading big file 1\n");
     S3DwonloadTest(
-				   "http://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/hugefile/airlinedata1.csv",
-        4664425994, "f5811ad92c994f1d6913d5338575fe38", 4, 64 * 1024 * 1024, 65536);
+        "http://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/hugefile/"
+        "airlinedata1.csv",
+        4664425994, "f5811ad92c994f1d6913d5338575fe38", 4, 64 * 1024 * 1024,
+        65536);
 }
 
 #endif  // AWSTEST

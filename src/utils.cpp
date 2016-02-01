@@ -269,7 +269,7 @@ uint64_t DataBuffer::append(const char *buf, uint64_t len) {
 }
 
 Config::Config(string filename) : _conf(NULL) {
-    if (filename!="") this->_conf = ini_load(filename.c_str());
+    if (filename != "") this->_conf = ini_load(filename.c_str());
     if (this->_conf == NULL) {
 #ifndef DEBUGS3
         write_log("Failed to load config file\n");
@@ -281,10 +281,9 @@ Config::~Config() {
     if (this->_conf) ini_free(this->_conf);
 }
 
-string Config::Get(string sec, string key,
-                        string defaultvalue) {
+string Config::Get(string sec, string key, string defaultvalue) {
     string ret = defaultvalue;
-    if ((key=="") || (sec=="")) return ret;
+    if ((key == "") || (sec == "")) return ret;
 
     if (this->_conf) {
         const char *tmp = ini_get(this->_conf, sec.c_str(), key.c_str());
@@ -293,9 +292,8 @@ string Config::Get(string sec, string key,
     return ret;
 }
 
-bool Config::Scan(string sec, string key, const char *scanfmt,
-                  void *dst) {
-    if ((key=="") || (sec=="")) return false;
+bool Config::Scan(string sec, string key, const char *scanfmt, void *dst) {
+    if ((key == "") || (sec == "")) return false;
 
     if (this->_conf) {
         return ini_sget(this->_conf, sec.c_str(), key.c_str(), scanfmt, dst);

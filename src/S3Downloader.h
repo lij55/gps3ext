@@ -136,8 +136,8 @@ class S3Fetcher : public HTTPFetcher {
 struct BucketContent;
 
 struct ListBucketResult {
-    string  Name;
-    string  Prefix;
+    string Name;
+    string Prefix;
     unsigned int MaxKeys;
     vector<BucketContent*> contents;
 };
@@ -145,26 +145,24 @@ struct ListBucketResult {
 BucketContent* CreateBucketContentItem(string key, uint64_t size);
 
 struct BucketContent {
-    friend BucketContent* CreateBucketContentItem(string key,
-                                                  uint64_t size);
+    friend BucketContent* CreateBucketContentItem(string key, uint64_t size);
     BucketContent();
     ~BucketContent();
-    string  Key() const { return this->key; };
+    string Key() const { return this->key; };
     uint64_t Size() const { return this->size; };
 
    private:
     // BucketContent(const BucketContent& b) = delete;
     // BucketContent operator=(const BucketContent& b) = delete;
 
-    string  key;
+    string key;
     // const char* etags;
     uint64_t size;
 };
 
 // need free
-ListBucketResult* ListBucket(string schema, string host,
-                             string bucket, string path,
-                             const S3Credential& cred);
+ListBucketResult* ListBucket(string schema, string host, string bucket,
+                             string path, const S3Credential& cred);
 
 ListBucketResult* ListBucket_FakeHTTP(string host, string bucket);
 

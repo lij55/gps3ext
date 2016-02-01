@@ -65,19 +65,9 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         curl_global_init(CURL_GLOBAL_ALL);
         const char *p_name = "s3";
         char *url_with_options = EXTPROTOCOL_GET_URL(fcinfo);
+        char *url = truncate_options(url_with_options);
 
-        // truncate url
-        const char *delimiter = " ";
-        char *options = strstr(url_with_options, delimiter);
-        int url_len = strlen(url_with_options);
-        if (options) {
-            url_len = strlen(url_with_options) - strlen(options);
-        }
-        char url[url_len + 1];
-        memcpy(url, url_with_options, url_len);
-        url[url_len] = 0;
-
-        char *config_path = get_opt_s3(options, "config");
+        char *config_path = get_opt_s3(url_with_options, "config");
         if (!config_path) {
             // no config path in url, use default value
             // data_folder/gpseg0/s3/s3.conf
@@ -128,6 +118,8 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         */
 
         EXTPROTOCOL_SET_USER_CTX(fcinfo, myData);
+
+        free(url);
     }
 
     /* =======================================================================

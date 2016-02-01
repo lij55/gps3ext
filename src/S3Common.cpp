@@ -235,7 +235,6 @@ uint64_t ParserCallback(void *contents, uint64_t size, uint64_t nmemb,
     return realsize;
 }
 
-
 char *get_opt_s3(const char *url, const char *key) {
     const char *key_f = NULL;
     const char *key_tailing = NULL;
@@ -301,4 +300,21 @@ FAIL:
         free(key2search);
     }
     return NULL;
+}
+
+// returned memory needs to be freed
+char *truncate_options(const char *url_with_options) {
+    const char *delimiter = " ";
+    char *options = strstr((char *)url_with_options, delimiter);
+    int url_len = strlen(url_with_options);
+
+    if (options) {
+        url_len = strlen(url_with_options) - strlen(options);
+    }
+
+    char *url = (char *)malloc(url_len + 1);
+    memcpy(url, url_with_options, url_len);
+    url[url_len] = 0;
+
+    return url;
 }

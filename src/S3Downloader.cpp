@@ -433,14 +433,12 @@ bool S3Fetcher::processheader() {
 }
 
 // CreateBucketContentItem
-BucketContent::~BucketContent() {
-
-}
+BucketContent::~BucketContent() {}
 
 BucketContent::BucketContent() : key(""), size(0) {}
 
 BucketContent *CreateBucketContentItem(string key, uint64_t size) {
-    if (key=="") return NULL;
+    if (key == "") return NULL;
 
     BucketContent *ret = new BucketContent();
     if (!ret) {
@@ -563,11 +561,10 @@ static bool extractContent(ListBucketResult *result, xmlNode *root_element) {
     return true;
 }
 
-ListBucketResult *ListBucket(string schema, string host,
-                             string bucket, string prefix,
-                             const S3Credential &cred) {
+ListBucketResult *ListBucket(string schema, string host, string bucket,
+                             string prefix, const S3Credential &cred) {
     std::stringstream sstr;
-    if (prefix!="") {
+    if (prefix != "") {
         sstr << schema << "://" << host << "/" << bucket
              << "?prefix=" << prefix;
         // sstr<<"http://"<<bucket<<"."<<host<<"?prefix="<<prefix;
@@ -575,8 +572,7 @@ ListBucketResult *ListBucket(string schema, string host,
         sstr << schema << "://" << bucket << "." << host;
     }
 
-    xmlParserCtxtPtr xmlcontext =
-        DoGetXML(host, bucket, sstr.str(), cred);
+    xmlParserCtxtPtr xmlcontext = DoGetXML(host, bucket, sstr.str(), cred);
 
     if (!xmlcontext) {
         S3ERROR("Failed to list bucket for %s", sstr.str().c_str());

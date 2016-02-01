@@ -112,7 +112,7 @@ class DataBuffer {
 
 class Config {
    public:
-    Config(string  filename);
+    Config(string filename);
     ~Config();
     string Get(string sec, string key, string defaultvalue);
     bool Scan(string sec, string key, const char* scanfmt, void* dst);

@@ -118,63 +118,74 @@ void ExtWrapperTest(const char *url, uint64_t buffer_size, const char *md5_str,
 #ifdef AWSTEST
 
 TEST(ExtWrapper, normal) {
-    ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/",
-                   64 * 1024, "138fc555074671912125ba692c678246", 0, 1,
-                   64 * 1024 * 1024);
+    ExtWrapperTest(
+        "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/"
+        "small17/",
+        64 * 1024, "138fc555074671912125ba692c678246", 0, 1, 64 * 1024 * 1024);
 }
 
 TEST(ExtWrapper, normal_2segs) {
-    ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/",
-                   64 * 1024, "a861acda78891b48b25a2788e028a740", 0, 2,
-                   64 * 1024 * 1024);
-    ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/",
-                   64 * 1024, "db05de0ec7e0808268e2363d3572dc7f", 1, 2,
-                   64 * 1024 * 1024);
+    ExtWrapperTest(
+        "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/"
+        "small17/",
+        64 * 1024, "a861acda78891b48b25a2788e028a740", 0, 2, 64 * 1024 * 1024);
+    ExtWrapperTest(
+        "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/"
+        "small17/",
+        64 * 1024, "db05de0ec7e0808268e2363d3572dc7f", 1, 2, 64 * 1024 * 1024);
 }
 
 TEST(ExtWrapper, normal_3segs) {
-    ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/",
-                   64 * 1024, "4d9ccad20bca50d2d1bc9c4eb4958e2c", 0, 3,
-                   64 * 1024 * 1024);
-    ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/",
-                   64 * 1024, "561597859d093905e2b21e896259ae79", 1, 3,
-                   64 * 1024 * 1024);
-    ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/",
-                   64 * 1024, "98d4e5348356ceee46d15c4e5f37845b", 2, 3,
-                   64 * 1024 * 1024);
+    ExtWrapperTest(
+        "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/"
+        "small17/",
+        64 * 1024, "4d9ccad20bca50d2d1bc9c4eb4958e2c", 0, 3, 64 * 1024 * 1024);
+    ExtWrapperTest(
+        "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/"
+        "small17/",
+        64 * 1024, "561597859d093905e2b21e896259ae79", 1, 3, 64 * 1024 * 1024);
+    ExtWrapperTest(
+        "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/"
+        "small17/",
+        64 * 1024, "98d4e5348356ceee46d15c4e5f37845b", 2, 3, 64 * 1024 * 1024);
 }
 
 TEST(ExtWrapper, normal_4segs) {
-    ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/",
-                   64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 0, 4,
-                   64 * 1024 * 1024);
-    ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/",
-                   64 * 1024, "4df154611d394c60084bb5b97bdb19be", 1, 4,
-                   64 * 1024 * 1024);
-    ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/",
-                   64 * 1024, "238affbb831ff27df9d09afeeb2e59f9", 2, 4,
-                   64 * 1024 * 1024);
-    ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/small17/",
-                   64 * 1024, "dceb001d03d54d61874d27c9f04596b1", 3, 4,
-                   64 * 1024 * 1024);
+    ExtWrapperTest(
+        "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/"
+        "small17/",
+        64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 0, 4, 64 * 1024 * 1024);
+    ExtWrapperTest(
+        "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/"
+        "small17/",
+        64 * 1024, "4df154611d394c60084bb5b97bdb19be", 1, 4, 64 * 1024 * 1024);
+    ExtWrapperTest(
+        "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/"
+        "small17/",
+        64 * 1024, "238affbb831ff27df9d09afeeb2e59f9", 2, 4, 64 * 1024 * 1024);
+    ExtWrapperTest(
+        "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/"
+        "small17/",
+        64 * 1024, "dceb001d03d54d61874d27c9f04596b1", 3, 4, 64 * 1024 * 1024);
 }
 
 TEST(ExtWrapper, huge_1seg) {
-	ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/hugefile/",
-                   64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 0, 1,
-                   64 * 1024 * 1024);
+    ExtWrapperTest(
+        "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/"
+        "hugefile/",
+        64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 0, 1, 64 * 1024 * 1024);
 }
 
 TEST(ExtWrapper, normal2_3segs) {
-	ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/normal/",
-                   64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 0, 3,
-                   64 * 1024 * 1024);
-	ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/normal/",
-                   64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 1, 3,
-                   64 * 1024 * 1024);
-	ExtWrapperTest("https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/normal/",
-                   64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 2, 3,
-                   64 * 1024 * 1024);
+    ExtWrapperTest(
+        "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/normal/",
+        64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 0, 3, 64 * 1024 * 1024);
+    ExtWrapperTest(
+        "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/normal/",
+        64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 1, 3, 64 * 1024 * 1024);
+    ExtWrapperTest(
+        "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/normal/",
+        64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 2, 3, 64 * 1024 * 1024);
 }
 
 #endif  // AWSTEST
