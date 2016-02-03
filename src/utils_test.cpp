@@ -166,7 +166,7 @@ TEST(databuffer, simple) {
 #endif
 
 TEST(utils, Config) {
-    Config c("test/s3.conf");
+    Config c("test/s3test.conf");
     EXPECT_STREQ(c.Get("configtest", "config1", "aaaaaa").c_str(), "abcdefg");
     EXPECT_STREQ(c.Get("configtest", "config2", "tttt").c_str(), "12345");
     EXPECT_STREQ(c.Get("configtest", "config3", "tttt").c_str(), "aaaaa");
@@ -175,8 +175,8 @@ TEST(utils, Config) {
     EXPECT_STREQ(c.Get("configtest", "config6", "tttt").c_str(), "tttt");
     EXPECT_STREQ(c.Get("configtest", "config7", "xx").c_str(), "xx");
 
-    EXPECT_STREQ(c.Get("configtest", NULL, "xx").c_str(), "xx");
-    EXPECT_STREQ(c.Get("configtest", "config7", NULL).c_str(), "");
+    EXPECT_STREQ(c.Get("configtest", "", "xx").c_str(), "xx");
+    EXPECT_STREQ(c.Get("configtest", "config7", "").c_str(), "");
 
     EXPECT_STREQ(c.Get("configtest", "", "xx").c_str(), "xx");
 
@@ -188,8 +188,8 @@ TEST(utils, Config) {
     EXPECT_EQ(value, 123);
 
     EXPECT_FALSE(c.Scan("configtest", "config7", "%ud", &value));
-    EXPECT_FALSE(c.Scan(NULL, "config7", "%ud", &value));
-    EXPECT_FALSE(c.Scan("configtest", NULL, "%ud", &value));
+    EXPECT_FALSE(c.Scan("", "config7", "%ud", &value));
+    EXPECT_FALSE(c.Scan("configtest", "", "%ud", &value));
 
     EXPECT_FALSE(c.Scan("configtest", "config5", "%ud", &value));
 

@@ -4,11 +4,7 @@
 #include <cstdlib>
 
 TEST(Config, basic) {
-    setenv("MASTER_DATA_DIRECTORY", "/tmp", 1);
-    system("mkdir -p /tmp/s3");
-    system("cp -f test/s3.conf /tmp/s3/s3.conf");
-
-    InitConfig("/tmp/s3/s3.conf", NULL);
+    InitConfig("test/s3test.conf", "");
 
     EXPECT_STREQ("secret_test", s3ext_secret.c_str());
     EXPECT_STREQ("accessid_test", s3ext_accessid.c_str());

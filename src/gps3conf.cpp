@@ -58,7 +58,6 @@ int32_t s3ext_logsock_udp = -1;
 Config* s3cfg = NULL;
 
 // not thread safe!!
-// Called only once.
 bool InitConfig(string conf_path, string section /*not used currently*/) {
     if (conf_path == "") {
 #ifndef DEBUGS3
@@ -67,18 +66,18 @@ bool InitConfig(string conf_path, string section /*not used currently*/) {
         return false;
     }
 
-    if (!s3cfg) {
-        s3cfg = new Config(conf_path);
-        if (!s3cfg || !s3cfg->Handle()) {
+    if (s3cfg) delete s3cfg;
+
+    s3cfg = new Config(conf_path);
+    if (!s3cfg || !s3cfg->Handle()) {
 #ifndef DEBUGS3
-            write_log("Failed to parse config file\n");
+        write_log("Failed to parse config file\n");
 #endif
-            if (s3cfg) {
-                delete s3cfg;
-                s3cfg = NULL;
-            }
-            return false;
+        if (s3cfg) {
+            delete s3cfg;
+            s3cfg = NULL;
         }
+        return false;
     }
 
     Config* cfg = s3cfg;

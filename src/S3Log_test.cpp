@@ -2,13 +2,11 @@
 #include "S3Log.cpp"
 
 TEST(logger, simple) {
-    system("mkdir -p /tmp/s3");
-    system("cp -f test/s3.conf /tmp/s3/s3.conf");
-    InitConfig("/tmp/s3/s3.conf", NULL);
+    InitConfig("test/s3test.conf", "");
     InitLog();
-    fprintf(stderr, "%d\n", s3ext_logtype);
-    S3DEBUG("hello");
-    S3ERROR("hello");
+    fprintf(stderr, "Hello, log type %d\n", s3ext_logtype);
+    S3DEBUG("Hello, DEBUG");
+    S3ERROR("Hello, ERROR");
 }
 
 TEST(logger, getstr) {

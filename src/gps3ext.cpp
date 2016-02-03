@@ -71,7 +71,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         if (!config_path) {
             // no config path in url, use default value
             // data_folder/gpseg0/s3/s3.conf
-            config_path = strdup("./s3/s3.conf");
+            config_path = strdup("s3/s3.conf");
         }
 
         bool result = InitConfig(config_path, "");

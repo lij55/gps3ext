@@ -64,6 +64,8 @@ TEST(ListBucket, fake) {
 #ifdef AWSTEST
 
 TEST(ListBucket, s3) {
+    InitConfig("test/s3.conf", "default");
+
     S3Credential g_cred = {s3ext_accessid, s3ext_secret};
 
     ListBucketResult *r =
@@ -88,6 +90,8 @@ TEST(ListBucket, s3) {
 void DownloadTest(const char *url, uint64_t file_size, const char *md5_str,
                   uint8_t thread_num, uint64_t chunk_size, uint64_t buffer_size,
                   bool use_credential) {
+    InitConfig("test/s3.conf", "default");
+
     S3Credential g_cred = {s3ext_accessid, s3ext_secret};
 
     uint64_t buf_len = buffer_size;
@@ -130,6 +134,8 @@ void HTTPDownloaderTest(const char *url, uint64_t file_size,
 void S3DwonloadTest(const char *url, uint64_t file_size, const char *md5_str,
                     uint8_t thread_num, uint64_t chunk_size,
                     uint64_t buffer_size) {
+    InitConfig("test/s3.conf", "default");
+
     return DownloadTest(url, file_size, md5_str, thread_num, chunk_size,
                         buffer_size, true);
 }
@@ -239,5 +245,4 @@ TEST(S3Downloader, bigfile) {
         4664425994, "f5811ad92c994f1d6913d5338575fe38", 4, 64 * 1024 * 1024,
         65536);
 }
-
 #endif  // AWSTEST
