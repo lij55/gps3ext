@@ -314,6 +314,7 @@ HTTPFetcher::HTTPFetcher(string url, OffsetMgr *o)
     if (this->curl) {
         // curl_easy_setopt(this->curl, CURLOPT_VERBOSE, 1L);
         // curl_easy_setopt(curl, CURLOPT_PROXY, "127.0.0.1:8080");
+        curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
         curl_easy_setopt(this->curl, CURLOPT_WRITEFUNCTION, WriterCallback);
         curl_easy_setopt(this->curl, CURLOPT_FORBID_REUSE, 1L);
         this->AddHeaderField(HOST, urlparser.Host());
