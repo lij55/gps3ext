@@ -65,7 +65,7 @@ int thread_setup(void)
 {
     int i;
  
-    mutex_buf = malloc(CRYPTO_num_locks(  ) * sizeof(MUTEX_TYPE));
+    mutex_buf = (pthread_mutex_t*)palloc(CRYPTO_num_locks() * sizeof(MUTEX_TYPE));
     if (!mutex_buf)
         return 0;
     for (i = 0;  i < CRYPTO_num_locks(  );  i++)
@@ -85,7 +85,7 @@ int thread_cleanup(void)
     CRYPTO_set_locking_callback(NULL);
     for (i = 0;  i < CRYPTO_num_locks(  );  i++)
         MUTEX_CLEANUP(mutex_buf[i]);
-    free(mutex_buf);
+    pfree(mutex_buf);
     mutex_buf = NULL;
     return 1;
 }
