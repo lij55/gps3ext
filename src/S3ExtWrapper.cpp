@@ -181,6 +181,10 @@ bool S3Reader::Destroy() {
 }
 
 bool S3ExtBase::ValidateURL() {
+    // TODO http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region
+    // s3.eu-central-1.amazonaws.com -> s3-eu-central-1.amazonaws.com
+    // s3.ap-northeast-2.amazonaws.com -> s3-ap-northeast-2.amazonaws.com
+
     const char *awsdomain = ".amazonaws.com";
     int ibegin = 0;
     int iend = url.find("://");
@@ -199,10 +203,18 @@ bool S3ExtBase::ValidateURL() {
 
     ibegin = url.find("-");
     iend = url.find(awsdomain);
-    if ((iend == string::npos) || (ibegin == string::npos)) {
+
+    if (iend == string::npos) {
         return false;
+    } else if (ibegin == string::npos) {
+        this->region = "external-1";
+    } else {
+        this->region = url.substr(ibegin + 1, iend - ibegin - 1);
     }
-    this->region = url.substr(ibegin + 1, iend - ibegin - 1);
+
+    if (this->region.compare("us-east-1") == 0) {
+        this->region = "external-1";
+    }
 
     ibegin = find_Nth(url, 3, "/");
     iend = find_Nth(url, 4, "/");

@@ -7,10 +7,10 @@ class S3Reader_fake : public S3Reader {
     virtual ~S3Reader_fake();
     virtual bool Init(int segid, int segnum, int chunksize);
     virtual bool Destroy();
+    virtual bool ValidateURL();
 
    protected:
     virtual string getKeyURL(const string key);
-    virtual bool ValidateURL();
 };
 
 S3Reader_fake::S3Reader_fake(string url) : S3Reader(url) {}
@@ -117,7 +117,52 @@ void ExtWrapperTest(const char *url, uint64_t buffer_size, const char *md5_str,
     free(buf);
 }
 
+TEST(ExtWrapper, ValidateURL_normal) {
+    S3ExtBase *myData;
+    myData = new S3Reader(
+        "s3://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset1/normal");
+
+    ASSERT_TRUE(myData->ValidateURL());
+    EXPECT_STREQ("us-west-2", myData->get_region().c_str());
+
+    delete myData;
+}
+
+TEST(ExtWrapper, ValidateURL_default) {
+    S3ExtBase *myData;
+    myData =
+        new S3Reader("s3://s3.amazonaws.com/s3test.pivotal.io/dataset1/normal");
+
+    ASSERT_TRUE(myData->ValidateURL());
+    EXPECT_STREQ("external-1", myData->get_region().c_str());
+
+    delete myData;
+}
+
+TEST(ExtWrapper, ValidateURL_useast1) {
+    S3ExtBase *myData;
+    myData = new S3Reader(
+        "s3://s3-us-east-1.amazonaws.com/s3test.pivotal.io/dataset1/normal");
+
+    ASSERT_TRUE(myData->ValidateURL());
+    EXPECT_STREQ("external-1", myData->get_region().c_str());
+
+    delete myData;
+}
+
 #ifdef AWSTEST
+
+TEST(ExtWrapper, normal_region_default) {
+    ExtWrapperTest(
+        "https://s3.amazonaws.com/useast1.s3test.pivotal.io/small17/",
+        64 * 1024, "138fc555074671912125ba692c678246", 0, 1, 64 * 1024 * 1024);
+}
+
+TEST(ExtWrapper, normal_region_useast1) {
+    ExtWrapperTest(
+        "https://s3-us-east-1.amazonaws.com/useast1.s3test.pivotal.io/small17/",
+        64 * 1024, "138fc555074671912125ba692c678246", 0, 1, 64 * 1024 * 1024);
+}
 
 TEST(ExtWrapper, normal) {
     ExtWrapperTest(
