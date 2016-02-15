@@ -116,9 +116,8 @@ void S3Reader::getNextDownloader() {
     string keyurl = this->getKeyURL(c->Key());
     S3DEBUG("key: %s, size: %llu", keyurl.c_str(), c->Size());
 
-    // XXX don't use strdup()
-    if (!filedownloader->init(keyurl.c_str(), c->Size(),
-                              this->chunksize, &this->cred)) {
+    if (!filedownloader->init(keyurl, c->Size(), this->chunksize,
+                              &this->cred)) {
         delete this->filedownloader;
         this->filedownloader = NULL;
     } else {  // move to next file
