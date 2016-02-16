@@ -220,19 +220,19 @@ TEST(ExtWrapper, huge_1seg) {
     ExtWrapperTest(
         "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/"
         "hugefile/",
-        64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 0, 1, 64 * 1024 * 1024);
+        64 * 1024, "75baaa39f2b1544ed8af437c2cad86b7", 0, 1, 64 * 1024 * 1024);
 }
 
 TEST(ExtWrapper, normal2_3segs) {
     ExtWrapperTest(
         "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/normal/",
-        64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 0, 3, 64 * 1024 * 1024);
+        64 * 1024, "1c1b198b246160733f7a3491bff5cd52", 0, 3, 64 * 1024 * 1024);
     ExtWrapperTest(
         "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/normal/",
-        64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 1, 3, 64 * 1024 * 1024);
+        64 * 1024, "296856eb9739d3022b3e9d8bf3b1ea2e", 1, 3, 64 * 1024 * 1024);
     ExtWrapperTest(
         "https://s3-us-west-2.amazonaws.com/s3test.pivotal.io/dataset2/normal/",
-        64 * 1024, "b87b5d79e2bcb8dc1d0fd289fbfa5829", 2, 3, 64 * 1024 * 1024);
+        64 * 1024, "00675684b6d6697571f22baaf407c6df", 2, 3, 64 * 1024 * 1024);
 }
 
 #endif  // AWSTEST
