@@ -185,7 +185,7 @@ void *DownloadThreadfunc(void *data) {
     uint64_t filled_size = 0;
     S3INFO("Downloading thread starts");
     do {
-        if (gps3ext_sigint_caught) {
+        if (QueryCancelPending) {
             S3INFO("Downloading thread is interrupted by SIGINT");
             return NULL;
         }
@@ -309,7 +309,7 @@ static uint64_t WriterCallback(void *contents, uint64_t size, uint64_t nmemb,
     uint64_t realsize = size * nmemb;
     Bufinfo *p = reinterpret_cast<Bufinfo *>(userp);
 
-    if (gps3ext_sigint_caught) {
+    if (QueryCancelPending) {
         return -1;
     }
 
