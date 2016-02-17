@@ -20,8 +20,11 @@
 #include "gps3ext.h"
 #include "gps3conf.h"
 
+#include <signal.h>
 #include <pthread.h>
 #include <openssl/err.h>
+
+volatile sig_atomic_t gps3ext_sigint_caught = 0;
 
 /* Do the module magic dance */
 
@@ -79,6 +82,12 @@ int thread_cleanup(void) {
     return 1;
 }
 
+void handle_sigint(int signum) {
+    if (signum == SIGINT) {
+        gps3ext_sigint_caught = 1;
+    }
+}
+
 /*
  * Import data into GPDB.
  */
@@ -87,6 +96,8 @@ Datum s3_import(PG_FUNCTION_ARGS) {
     char *data;
     int data_len;
     size_t nread = 0;
+
+    signal(SIGINT, handle_sigint);
 
     /* Must be called via the external table format manager */
     if (!CALLED_AS_EXTPROTOCOL(fcinfo))
@@ -109,8 +120,11 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
     if (myData == NULL) {
         /* first call. do any desired init */
+        gps3ext_sigint_caught = 0;
+
         curl_global_init(CURL_GLOBAL_ALL);
         thread_setup();
+
         const char *p_name = "s3";
         char *url_with_options = EXTPROTOCOL_GET_URL(fcinfo);
         char *url = truncate_options(url_with_options);

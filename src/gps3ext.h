@@ -1,6 +1,10 @@
 #ifndef _GPS3EXT_H_
 #define _GPS3EXT_H_
 #include <string>
+#include <signal.h>
+
+// if we have got SIGINT, global val for pthread
+extern volatile sig_atomic_t gps3ext_sigint_caught;
 
 // TODO include GpId from proper place
 typedef int32_t int32;
