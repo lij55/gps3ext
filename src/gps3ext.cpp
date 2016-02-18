@@ -82,6 +82,7 @@ int thread_cleanup(void) {
 
 /*
  * Import data into GPDB.
+ * invoked by GPDB, be careful with C++ exceptions.
  */
 Datum s3_import(PG_FUNCTION_ARGS) {
     S3ExtBase *myData;
@@ -101,7 +102,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
         if (myData) {
             thread_cleanup();
             if (!myData->Destroy()) {
-                ereport(ERROR, (0, errmsg("Cleanup S3 extention failed")));
+                ereport(ERROR, (0, errmsg("Failed to cleanup S3 extention")));
             }
             delete myData;
         }
@@ -192,6 +193,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
 /*
  * Export data out of GPDB.
+ * invoked by GPDB, be careful with C++ exceptions.
  */
 Datum s3_export(PG_FUNCTION_ARGS) { PG_RETURN_INT32(0); }
 
