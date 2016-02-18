@@ -82,6 +82,7 @@ int thread_cleanup(void) {
 
 /*
  * Import data into GPDB.
+ * invoked by GPDB, be careful with C++ exceptions.
  */
 Datum s3_import(PG_FUNCTION_ARGS) {
     S3ExtBase *myData;
@@ -100,8 +101,13 @@ Datum s3_import(PG_FUNCTION_ARGS) {
     if (EXTPROTOCOL_IS_LAST_CALL(fcinfo)) {
         if (myData) {
             thread_cleanup();
-            if (!myData->Destroy()) {
-                ereport(ERROR, (0, errmsg("Cleanup S3 extention failed")));
+            try {
+                if (!myData->Destroy()) {
+                    ereport(ERROR,
+                            (0, errmsg("Failed to cleanup S3 extention")));
+                }
+            } catch (...) {
+                ereport(ERROR, (0, errmsg("Failed to cleanup S3 extention")));
             }
             delete myData;
         }
@@ -115,8 +121,11 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
         const char *p_name = "s3";
         char *url_with_options = EXTPROTOCOL_GET_URL(fcinfo);
+
+        // clean C func, no exception risk here
         char *url = truncate_options(url_with_options);
 
+        // clean C func, no exception risk here
         char *config_path = get_opt_s3(url_with_options, "config");
         if (!config_path) {
             // no config path in url, use default value
@@ -124,16 +133,27 @@ Datum s3_import(PG_FUNCTION_ARGS) {
             config_path = strdup("s3/s3.conf");
         }
 
-        bool result = InitConfig(config_path, "");
+        bool result = 0;
+        try {
+            result = InitConfig(config_path, "");
+        } catch (...) {
+            result = 0;
+        }
         if (!result) {
             free(config_path);
             ereport(ERROR, (0, errmsg("Can't find config file, please check")));
         } else {
-            ClearConfig();
+            try {
+                ClearConfig();
+            } catch (...) {
+            }
             free(config_path);
         }
 
-        InitLog();
+        try {
+            InitLog();
+        } catch (...) {
+        }
 
         if (s3ext_accessid == "") {
             ereport(ERROR, (0, errmsg("ERROR: access id is empty")));
@@ -147,24 +167,25 @@ Datum s3_import(PG_FUNCTION_ARGS) {
             ereport(ERROR, (0, errmsg("ERROR: segment id is invalid")));
         }
 
-        myData = CreateExtWrapper(url);
+        try {
+            myData = CreateExtWrapper(url);
 
-        if (!myData ||
-            !myData->Init(s3ext_segid, s3ext_segnum, s3ext_chunksize)) {
+            if (!myData ||
+                !myData->Init(s3ext_segid, s3ext_segnum, s3ext_chunksize)) {
+                if (myData) delete myData;
+                ereport(ERROR,
+                        (0, errmsg("Failed to init S3 extension, segid = "
+                                   "%d, segnum = %d, please check your "
+                                   "configurations and net connection",
+                                   s3ext_segid, s3ext_segnum)));
+            }
+        } catch (...) {
             if (myData) delete myData;
             ereport(ERROR, (0, errmsg("Failed to init S3 extension, segid = "
                                       "%d, segnum = %d, please check your "
                                       "configurations and net connection",
                                       s3ext_segid, s3ext_segnum)));
         }
-        /*
-                  if(strcasecmp(parsed_url->protocol, p_name) != 0) {
-                  elog(ERROR, "internal error: s3prot called with a different
-                  protocol
-                  (%s)",
-                  parsed_url->protocol);
-                  }
-        */
 
         EXTPROTOCOL_SET_USER_CTX(fcinfo, myData);
 
@@ -181,9 +202,14 @@ Datum s3_import(PG_FUNCTION_ARGS) {
     uint64_t readlen = 0;
     if (data_len > 0) {
         readlen = data_len;
-        if (!myData->TransferData(data, readlen))
+        try {
+            if (!myData->TransferData(data, readlen)) {
+                ereport(ERROR, (0, errmsg("s3_import: could not read data")));
+            }
+            nread = (size_t)readlen;
+        } catch (...) {
             ereport(ERROR, (0, errmsg("s3_import: could not read data")));
-        nread = (size_t)readlen;
+        }
         // S3DEBUG("read %d data from S3", nread);
     }
 
@@ -192,6 +218,7 @@ Datum s3_import(PG_FUNCTION_ARGS) {
 
 /*
  * Export data out of GPDB.
+ * invoked by GPDB, be careful with C++ exceptions.
  */
 Datum s3_export(PG_FUNCTION_ARGS) { PG_RETURN_INT32(0); }
 
