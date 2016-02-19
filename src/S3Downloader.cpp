@@ -186,7 +186,7 @@ void *DownloadThreadfunc(void *data) {
     S3INFO("Downloading thread starts");
     do {
         if (QueryCancelPending) {
-            S3INFO("Downloading thread is interrupted by SIGINT");
+            S3INFO("Downloading thread is interrupted by GPDB");
             return NULL;
         }
 
@@ -402,7 +402,7 @@ uint64_t HTTPFetcher::fetchdata(uint64_t offset, char *data, uint64_t len) {
         CURLcode res = curl_easy_perform(curl_handle);
 
         if (res == CURLE_WRITE_ERROR) {
-            S3INFO("Curl downloading is interrupted by SIGINT");
+            S3INFO("Curl downloading is interrupted by GPDB");
             bi.len = -1;
             break;
         }
