@@ -127,6 +127,10 @@ bool InitConfig(string conf_path, string section /*not used currently*/) {
             S3INFO("The given chunksize is too large, use max value 128MB");
             s3ext_chunksize = 128 * 1024 * 1024;
         }
+        if (s3ext_chunksize < 2 * 1024 * 1024) {
+            S3INFO("The given chunksize is too large, use max value 2MB");
+            s3ext_chunksize = 2 * 1024 * 1024;
+        }
 
         ret = cfg->Scan("default", "low_speed_limit", "%d",
                         &s3ext_low_speed_limit);
