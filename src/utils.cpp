@@ -163,29 +163,6 @@ bool sha256hmac(const char *str, char out[65], const char *secret) {
     return true;
 }
 
-// return malloced memory because Base64Encode() does so
-char *SignatureV2(const char *date, const char *path, const char *key) {
-    int maxlen, len;
-    char *tmpbuf;
-    char outbuf[20];  // SHA_DIGEST_LENGTH is 20
-
-    if (!date || !path || !key) {
-        return NULL;
-    }
-    maxlen = strlen(date) + strlen(path) + 20;
-    tmpbuf = (char *)alloca(maxlen);
-    sprintf(tmpbuf, "GET\n\n\n%s\n%s", date, path);
-    // printf("%s\n",tmpbuf);
-    if (!sha1hmac(tmpbuf, outbuf, key)) {
-        return NULL;
-    }
-    return Base64Encode(outbuf, 20);
-}
-
-char *SignatureV4(const char *date, const char *path, const char *key) {
-    return NULL;
-}
-
 CURL *CreateCurlHandler(const char *path) {
     CURL *curl = NULL;
     if (!path) {

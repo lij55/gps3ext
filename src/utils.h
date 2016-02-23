@@ -22,10 +22,6 @@ bool sha1hmac(const char* str, char out[20], const char* secret);
 
 bool sha256hmac(char* str, char out[65], char* secret);
 
-// return malloced because Base64Encode
-char* SignatureV2(const char* date, const char* path, const char* key);
-char* SignatureV4(const char* date, const char* path, const char* key);
-
 #ifdef DEBUGS3
 void InitLog();
 #endif
