@@ -44,6 +44,73 @@ bool SignGETv2(HeaderContent *h, string path_with_query,
     return true;
 }
 
+bool SignGETv4(HeaderContent *h, string path_with_query,
+               const S3Credential &cred) {
+    time_t t;
+    struct tm tm_info;
+    char date_str[17];
+    char timestamp_str[17];
+    char hash_of_canonical_str[65];
+#define S3_SHA256_DIGEST_LENGTH 65
+    char signature_hex[65];
+    char kDate[S3_SHA256_DIGEST_LENGTH];
+    char kRegion[S3_SHA256_DIGEST_LENGTH];
+    char kService[S3_SHA256_DIGEST_LENGTH];
+    char signingkey[S3_SHA256_DIGEST_LENGTH];
+    char signature_dig[S3_SHA256_DIGEST_LENGTH];
+
+    // XXX should be arguments
+    const char *region = "us-west-2";
+    const char *service = "s3";
+
+    /* YYYYMMDD'T'HHMMSS'Z' */
+    t = time(NULL);
+    gmtime_r(&t, &tm_info);
+    strftime(timestamp_str, 17, "%Y%m%dT%H%M%SZ", &tm_info);
+
+    h->Add(X_AMZ_DATE, timestamp_str);
+    memcpy(date_str, timestamp_str, 8);
+    date_str[8] = '\0';
+
+    // XXX range? payload?
+    stringstream canonical_str;
+    canonical_str << "GET\n" << path_with_query << "\n\nhost:" << h->Get(HOST)
+                  << "\nrange:" << h->Get(RANGE)
+                  << "\nx-amz-content-sha256:" << h->Get(X_AMZ_CONTENT_SHA256)
+                  << "\nx-amz-date:" << h->Get(X_AMZ_DATE) << "\n\n"
+                  << "host;range;x-amz-content-sha256;x-amz-date\n"
+                  << h->Get(X_AMZ_CONTENT_SHA256);
+
+    sha256(canonical_str.str().c_str(), hash_of_canonical_str);
+
+    stringstream string2sign_str;
+    string2sign_str << "AWS4-HMAC-SHA256\n" << timestamp_str << "\n" << date_str
+                    << "/" << region << "/s3/aws3request\n"
+                    << hash_of_canonical_str;
+
+    stringstream date_secret_str;
+    date_secret_str << "AWS4" << cred.secret.c_str();
+
+    sha256hmac(date_secret_str.str().c_str(), kDate, date_str);
+    sha256hmac(region, kRegion, kDate);
+    sha256hmac(service, kService, kRegion);
+    sha256hmac("aws4_request", signingkey, kService);
+    sha256hmac(string2sign_str.str().c_str(), signature_dig, signingkey);
+    for (int i = 0; i < S3_SHA256_DIGEST_LENGTH; i++)
+        sprintf(signature_hex + (i * 2), "%02x", signature_dig[i]);
+
+    stringstream signature_header;
+    signature_header << "AWS4-HMAC-SHA256 Credential=" << cred.keyid.c_str()
+                     << "/" << date_str << "/" << region << "/" << service
+                     << "/aws4_request, SignedHeaders="
+                     << "host;range;x-amz-content-sha256;x-amz-date, Signature="
+                     << signature_hex;
+
+    h->Add(AUTHORIZATION, signature_hex);
+
+    return true;
+}
+
 #if 0
 bool SignPUTv2(HeaderContent *h, string path_with_query,
                const S3Credential &cred) {
@@ -126,6 +193,10 @@ const char *GetFieldString(HeaderField f) {
             return "Authorization";
         case ETAG:
             return "ETag";
+        case X_AMZ_DATE:
+            return "X-Amz-Date";
+        case X_AMZ_CONTENT_SHA256:
+            return "x-amz-content-sha256";
         default:
             return "unknown";
     }
@@ -139,7 +210,7 @@ bool HeaderContent::Add(HeaderField f, const std::string &v) {
         return false;
     }
 }
-/*
+
 const char *HeaderContent::Get(HeaderField f) {
     const char *ret = NULL;
     if (!this->fields[f].empty()) {
@@ -147,7 +218,7 @@ const char *HeaderContent::Get(HeaderField f) {
     }
     return ret;
 }
-*/
+
 struct curl_slist *HeaderContent::GetList() {
     struct curl_slist *chunk = NULL;
     std::map<HeaderField, std::string>::iterator it;

@@ -27,6 +27,8 @@ enum HeaderField {
     EXPECT,
     AUTHORIZATION,
     ETAG,
+    X_AMZ_DATE,
+    X_AMZ_CONTENT_SHA256,
 };
 
 enum Method { GET, PUT, POST, DELETE, HEAD };
@@ -36,7 +38,7 @@ class HeaderContent {
     HeaderContent(){};
     ~HeaderContent(){};
     bool Add(HeaderField f, const string& value);
-    // const char* Get(HeaderField f);
+    const char* Get(HeaderField f);
     struct curl_slist* GetList();
 
    private:
