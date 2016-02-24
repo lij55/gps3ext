@@ -18,7 +18,7 @@
 using std::string;
 using std::stringstream;
 
-#ifdef DEBUG_CURL
+#ifdef S3_UPLOAD_DEBUG_CURL
 struct debug_data {
     char trace_ascii; /* 1 or 0 */
 };
@@ -114,17 +114,17 @@ struct MemoryData {
     size_t sizeleft;
 };
 
+// return the number of items
 static size_t mem_read_callback(void *ptr, size_t size, size_t nmemb,
                                 void *userp) {
     struct MemoryData *puppet = (struct MemoryData *)userp;
-
-#ifdef MULTIBYTESMODE
     size_t realsize = size * nmemb;
+    size_t nmemb2read =
+        realsize < puppet->sizeleft ? nmemb : (puppet->sizeleft / size);
+    size_t n2read = nmemb2read * size;
 
-    size_t n2read = realsize < puppet->sizeleft ? realsize : puppet->sizeleft;
-
-    printf("n2read = %d, realsize = %d, puppet->sizeleft = %d\n", n2read,
-           realsize, puppet->sizeleft);
+    // printf("n2read = %d, nmemb2read = %d, realsize = %d, puppet->sizeleft =
+    // %d\n", n2read, nmemb2read, realsize, puppet->sizeleft);
 
     if (!n2read) return 0;
 
@@ -132,23 +132,10 @@ static size_t mem_read_callback(void *ptr, size_t size, size_t nmemb,
     puppet->advance += n2read;  /* advance pointer */
     puppet->sizeleft -= n2read; /* less data left */
 
-    return n2read;
-#else
-    if (size * nmemb < 1) return 0;
-
-    while (puppet->sizeleft) {
-        *(char *)ptr = puppet->advance[0]; /* copy one single byte */
-
-        puppet->advance++;  /* advance pointer */
-        puppet->sizeleft--; /* less data left */
-
-        return 1;
-    }
-
-    return 0;
-#endif
+    return nmemb2read;
 }
 
+// return the number of items
 static size_t header_write_callback(void *contents, size_t size, size_t nmemb,
                                     void *userp) {
     size_t realsize = size * nmemb;
@@ -166,7 +153,7 @@ static size_t header_write_callback(void *contents, size_t size, size_t nmemb,
     puppet->advance += realsize;
     puppet->sizeleft -= realsize;
 
-    return realsize;
+    return nmemb;
 }
 
 // XXX need free
@@ -209,7 +196,7 @@ const char *GetUploadId(const char *host, const char *bucket,
     header->Add(CONTENTTYPE, "application/x-www-form-urlencoded");
     UrlParser p(url.str().c_str());
     path_with_query << p.Path() << "?uploads";
-    SignPOSTv2(header, path_with_query.str().c_str(), cred);
+    SignPOSTv2(header, path_with_query.str(), cred);
 
     CURL *curl = curl_easy_init();
     if (curl) {
@@ -307,7 +294,7 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     UrlParser p(url.str().c_str());
     path_with_query << p.Path() << "?partNumber=" << part_number
                     << "&uploadId=" << upload_id;
-    SignPUTv2(header, path_with_query.str().c_str(), cred);
+    SignPUTv2(header, path_with_query.str(), cred);
 
     CURL *curl = curl_easy_init();
     if (curl) {
@@ -428,7 +415,7 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     XMLInfo xml;
     xml.ctxt = NULL;
 
-#ifdef DEBUG_CURL
+#ifdef S3_UPLOAD_DEBUG_CURL
     struct debug_data config;
     config.trace_ascii = 1;
 #endif
@@ -483,32 +470,34 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
 
     // std::cout << body.str().c_str() << std::endl;
 
-    struct MemoryData read_data = {(char *)body.str().c_str(),
-                                   strlen(body.str().c_str())};
+    uint32_t body_size = strlen(body.str().c_str());
+    char *body_data = (char *)malloc(body_size);
+    if (body_data) {
+        memcpy(body_data, body.str().c_str(), body_size);
+    }
+    struct MemoryData read_data = {body_data, body_size};
 
     HeaderContent *header = new HeaderContent();
     header->Add(HOST, host);
-    // If you add a header with no content as in 'Accept:' (no data on the right
-    // side of the colon), the internally used header will get disabled. With
-    // this option you can add new headers, replace internal headers and remove
-    // internal headers. To add a header with no content (nothing to the right
-    // side of the colon), use the form 'MyHeader;' (note the ending semicolon).
-    // still a space character there
-    // XXX
+    // XXX If you add a header with no content as in 'Accept:' (no data on the
+    // right side of the colon), the internally used header will get disabled.
+    // With this option you can add new headers, replace internal headers and
+    // remove internal headers. To add a header with no content (nothing to the
+    // right side of the colon), use the form 'MyHeader;' (note the ending
+    // semicolon). still a space character there
     // header->Disable(CONTENTTYPE);
     header->Add(CONTENTTYPE, "application/xml");
-    header->Add(CONTENTLENGTH, std::to_string(strlen(body.str().c_str())));
+    header->Add(CONTENTLENGTH, std::to_string(body_size));
     UrlParser p(url.str().c_str());
     path_with_query << p.Path() << "?uploadId=" << upload_id;
-    SignPOSTv2(header, path_with_query.str().c_str(), cred);
+    SignPOSTv2(header, path_with_query.str(), cred);
 
     CURL *curl = curl_easy_init();
     if (curl) {
-#ifdef DEBUG_CURL
+#ifdef S3_UPLOAD_DEBUG_CURL
         curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, trace_debug_data);
         curl_easy_setopt(curl, CURLOPT_DEBUGDATA, &config);
 #endif
-
         /* specify target URL, and note that this URL should include a file
            name, not only a directory */
         curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
@@ -520,11 +509,13 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
         curl_easy_setopt(curl, CURLOPT_READFUNCTION, mem_read_callback);
 
         /* provide the size of the upload, we specicially typecast the value
-           to curl_off_t since we must be sure to use the correct data size */
-        curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE,
-                         (curl_off_t)strlen(body.str().c_str()));
+           to curl_off_t since we must be sure to use the correct data size
+           */
+        curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)body_size);
 
-        // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+#ifdef S3_UPLOAD_DEBUG_CURL
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+#endif
         curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
 
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
@@ -597,6 +588,7 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     curl_slist_free_all(chunk);
     curl_easy_cleanup(curl);
     free(header_buf);
+    free(body_data);
 
     if (response_code) {
         return false;

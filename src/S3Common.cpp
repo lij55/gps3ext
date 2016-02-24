@@ -111,7 +111,6 @@ bool SignGETv4(HeaderContent *h, string path_with_query,
     return true;
 }
 
-#if 0
 bool SignPUTv2(HeaderContent *h, string path_with_query,
                const S3Credential &cred) {
     char timestr[64];
@@ -138,7 +137,7 @@ bool SignPUTv2(HeaderContent *h, string path_with_query,
     return true;
 }
 
-bool SignPOSTv2(HeaderContent *h, const char *path_with_query,
+bool SignPOSTv2(HeaderContent *h, string path_with_query,
                 const S3Credential &cred) {
     char timestr[64];
     char tmpbuf[20];  // SHA_DIGEST_LENGTH is 20
@@ -171,7 +170,6 @@ bool SignPOSTv2(HeaderContent *h, const char *path_with_query,
 
     return true;
 }
-#endif
 
 const char *GetFieldString(HeaderField f) {
     switch (f) {
@@ -290,20 +288,22 @@ char *UrlParser::extract_field(const struct http_parser_url *u,
     return ret;
 }
 
+// return the number of items
 uint64_t ParserCallback(void *contents, uint64_t size, uint64_t nmemb,
                         void *userp) {
     uint64_t realsize = size * nmemb;
-    int res;
-    // printf("%.*s",realsize, (char*)contents);
     struct XMLInfo *pxml = (struct XMLInfo *)userp;
+
+    // printf("%.*s",realsize, (char*)contents);
+
     if (!pxml->ctxt) {
         pxml->ctxt = xmlCreatePushParserCtxt(NULL, NULL, (const char *)contents,
                                              realsize, "resp.xml");
-        return realsize;
     } else {
-        res = xmlParseChunk(pxml->ctxt, (const char *)contents, realsize, 0);
+        xmlParseChunk(pxml->ctxt, (const char *)contents, realsize, 0);
     }
-    return realsize;
+
+    return nmemb;
 }
 
 // invoked by s3_import(), need to be exception safe

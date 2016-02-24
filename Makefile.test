@@ -1,9 +1,9 @@
 CPP = g++
-CFLAGS = -g3 -std=c++98 -fPIC -fprofile-arcs -ftest-coverage -DDEBUGS3 -DAWSTEST
+CFLAGS = -g3 -std=c++11 -fPIC -fprofile-arcs -ftest-coverage -DDEBUGS3 -DAWSTEST -DFAKETEST
 INCLUDES = -Isrc -Ilib -I/usr/include/libxml2
 LDFLAGS = -lpthread -lcrypto -lcurl -lxml2 -lgcov
 
-testcources = src/gps3conf_test.cpp src/utils_test.cpp src/S3Downloader_test.cpp src/S3Common_test.cpp src/S3ExtWrapper_test.cpp src/S3Log_test.cpp
+testcources = src/gps3conf_test.cpp src/utils_test.cpp src/S3Downloader_test.cpp src/S3Uploader_test.cpp src/S3ExtWrapper_test.cpp src/S3Common_test.cpp src/S3Log_test.cpp
 
 testapp = s3test
 testobjs = $(testcources:.cpp=.o)
