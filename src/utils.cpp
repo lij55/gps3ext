@@ -293,3 +293,126 @@ bool to_bool(std::string str) {
         return false;
     }
 }
+
+const char uri_mapping[256] = {
+    /*       0   1   2   3   4   5   6   7
+     *       8   9   A   B   C   D   E   F */
+    /* 0 */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /*   */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 1 */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /*   */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 2 */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /*   */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 3 */ 0,  1,  2,  3,  4,  5,  6,  7,
+    /*   */ 8,  9,  -1, -1, -1, -1, -1, -1,
+
+    /* 4 */ -1, 10, 11, 12, 13, 14, 15, -1,
+    /*   */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 5 */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /*   */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 6 */ -1, 10, 11, 12, 13, 14, 15, -1,
+    /*   */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 7 */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /*   */ -1, -1, -1, -1, -1, -1, -1, -1,
+
+    /* 8 */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /*   */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 9 */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /*   */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /* A */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /*   */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /* B */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /*   */ -1, -1, -1, -1, -1, -1, -1, -1,
+
+    /* C */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /*   */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /* D */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /*   */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /* E */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /*   */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /* F */ -1, -1, -1, -1, -1, -1, -1, -1,
+    /*   */ -1, -1, -1, -1, -1, -1, -1, -1};
+
+// alpha, num and - _ . ~ are reserved(RFC 3986).
+const char uri_reserved[256] = {
+    /*      0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F */
+    /* 0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 1 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 2 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0,
+    /* 3 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+
+    /* 4 */ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    /* 5 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,
+    /* 6 */ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    /* 7 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0,
+
+    /* 8 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 9 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* A */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* B */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+    /* C */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* D */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* E */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* F */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+std::string uri_encode(const std::string &src) {
+    const unsigned char *src_str = (const unsigned char *)src.c_str();
+    const int src_len = src.length();
+
+    unsigned char *const sub_start = new unsigned char[src_len * 3];
+    unsigned char *sub_end = sub_start;
+    const unsigned char *const src_end = src_str + src_len;
+
+    const char uri_rmapping[16 + 1] = "0123456789ABCDEF";
+
+    while (src_str < src_end) {
+        if (uri_reserved[*src_str]) {
+            *sub_end++ = *src_str;
+        } else {
+            *sub_end++ = '%';
+            *sub_end++ = uri_rmapping[*src_str >> 4];
+            *sub_end++ = uri_rmapping[*src_str & 0x0F];
+        }
+
+        src_str++;
+    }
+
+    std::string ret_str((char *)sub_start, (char *)sub_end);
+    delete[] sub_start;
+    return ret_str;
+}
+
+std::string uri_decode(const std::string &src) {
+    const unsigned char *src_str = (const unsigned char *)src.c_str();
+    const int src_len = src.length();
+
+    const unsigned char *const src_end = src_str + src_len;
+    const unsigned char *const src_last_dec = src_end - 2;
+
+    char *const sub_start = new char[src_len];
+    char *sub_end = sub_start;
+
+    char dec1, dec2;
+
+    while (src_str < src_last_dec) {
+        if (*src_str == '%') {
+            dec1 = uri_mapping[*(src_str + 1)];
+            dec2 = uri_mapping[*(src_str + 2)];
+
+            if ((dec1 != -1) && (dec2 != -1)) {
+                *sub_end++ = (dec1 << 4) + dec2;
+                src_str += 3;
+                continue;
+            }
+        }
+
+        *sub_end++ = *src_str++;
+    }
+
+    while (src_str < src_end) *sub_end++ = *src_str++;
+
+    std::string ret_str(sub_start, sub_end);
+    delete[] sub_start;
+    return ret_str;
+}

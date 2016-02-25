@@ -5,7 +5,14 @@
 #include <cstdlib>
 // #include <cstdint>
 #include <cstring>
+#include <string>
+#include <openssl/md5.h>
+
 #include "ini.h"
+#include "S3Log.h"
+
+using std::string;
+
 bool gethttpnow(char datebuf[65]);
 
 bool lowercase(char* out, const char* in);
@@ -21,15 +28,6 @@ bool sha256(const char* string, char outputBuffer[65]);
 bool sha1hmac(const char* str, char out[20], const char* secret);
 
 bool sha256hmac(const char* str, char out[65], const char* secret);
-
-#ifdef DEBUGS3
-void InitLog();
-#endif
-
-#include <string>
-using std::string;
-
-#include <openssl/md5.h>
 
 size_t find_Nth(const string& str,  // where to work
                 unsigned N,         // N'th ocurrence
@@ -119,5 +117,9 @@ class Config {
 };
 
 bool to_bool(std::string str);
+
+std::string uri_encode(const std::string& src);
+
+std::string uri_decode(const std::string& src);
 
 #endif  // _UTILFUNCTIONS_
