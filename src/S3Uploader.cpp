@@ -274,7 +274,10 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     struct MemoryData header_data = {header_buf, 4 * 1024};
     struct MemoryData read_data = {(char *)data, data_size};
 
-    if (!host || !bucket || !obj_name) return NULL;
+    if (!host || !bucket || !obj_name) {
+        free(header_buf);
+        return NULL;
+    }
 
     url << "http://" << host << "/" << bucket << "/" << obj_name;
 
@@ -327,6 +330,7 @@ const char *PartPutS3Object(const char *host, const char *bucket,
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&xml);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ParserCallback);
     } else {
+        free(header_buf);
         return NULL;
     }
 
@@ -352,6 +356,9 @@ const char *PartPutS3Object(const char *host, const char *bucket,
     out << header_buf;
 
     // std::cout << header_buf << std::endl;
+
+    free(header_buf);
+    header_buf = NULL;
 
     // TODO general header content extracting func
     uint64_t etag_start_pos = out.str().find("ETag: ") + 6;
@@ -401,7 +408,7 @@ const char *PartPutS3Object(const char *host, const char *bucket,
 
     curl_slist_free_all(chunk);
     curl_easy_cleanup(curl);
-    free(header_buf);
+    free(response_code);
 
     return NULL;
 }
@@ -419,16 +426,6 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     struct debug_data config;
     config.trace_ascii = 1;
 #endif
-
-    char *header_buf = (char *)malloc(4 * 1024);
-    if (!header_buf) {
-        printf("failed to malloc header_buf\n");
-        return false;
-    } else {
-        memset(header_buf, 0, 4 * 1024);
-    }
-
-    struct MemoryData header_data = {header_buf, 4 * 1024};
 
     if (!host || !bucket || !obj_name) return false;
 
@@ -520,9 +517,6 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
 
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
-        curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void *)&header_data);
-        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_write_callback);
-
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&xml);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ParserCallback);
     } else {
@@ -536,8 +530,6 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     if (res != CURLE_OK)
         fprintf(stderr, "curl_easy_perform() failed: %s\n",
                 curl_easy_strerror(res));
-
-    // std::cout << header_buf << std::endl;
 
     // HTTP/1.1 200 OK
     // x-amz-id-2: Uuag1LuByRx9e6j5Onimru9pO4ZVKnJ2Qz7/C1NPcfTWAtRPfTaOFg==
@@ -582,12 +574,11 @@ bool CompleteMultiPutS3(const char *host, const char *bucket,
     }
 
     if (response_code) {
-        std::cout << response_code << std::endl;
+        std::cout << "Error: " << response_code << std::endl;
     }
 
     curl_slist_free_all(chunk);
     curl_easy_cleanup(curl);
-    free(header_buf);
     free(body_data);
 
     if (response_code) {
