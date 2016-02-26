@@ -386,8 +386,10 @@ char *truncate_options(const char *url_with_options) {
     }
 
     char *url = (char *)malloc(url_len + 1);
-    memcpy(url, url_with_options, url_len);
-    url[url_len] = 0;
+    if (url) {
+        memcpy(url, url_with_options, url_len);
+        url[url_len] = 0;
+    }
 
     return url;
 }

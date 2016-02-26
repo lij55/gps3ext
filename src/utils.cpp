@@ -102,8 +102,10 @@ char *Base64Encode(const char *buffer,
     BIO_get_mem_ptr(bio, &bufferPtr);
 
     ret = (char *)malloc(bufferPtr->length + 1);
-    memcpy(ret, bufferPtr->data, bufferPtr->length);
-    ret[bufferPtr->length] = 0;
+    if (ret) {
+        memcpy(ret, bufferPtr->data, bufferPtr->length);
+        ret[bufferPtr->length] = 0;
+    }
 
     BIO_set_close(bio, BIO_NOCLOSE);
     BIO_free_all(bio);
@@ -240,9 +242,13 @@ DataBuffer::~DataBuffer() {
 
 uint64_t DataBuffer::append(const char *buf, uint64_t len) {
     uint64_t copylen = std::min(len, maxsize - length);
-    memcpy(this->data + length, buf, copylen);
-    this->length += copylen;
-    return copylen;
+    if (this->data) {
+        memcpy(this->data + length, buf, copylen);
+        this->length += copylen;
+        return copylen;
+    } else {
+        return 0;
+    }
 }
 
 Config::Config(string filename) : _conf(NULL) {
