@@ -18,7 +18,7 @@ using std::stringstream;
 
 bool SignGETv2(HeaderContent *h, string path_with_query,
                const S3Credential &cred) {
-    char timestr[64];
+    char timestr[65];
     char tmpbuf[20];  // SHA_DIGEST_LENGTH is 20
 
     // CONTENT_LENGTH is not a part of StringToSign
@@ -113,7 +113,7 @@ bool SignGETv4(HeaderContent *h, string path_with_query,
 
 bool SignPUTv2(HeaderContent *h, string path_with_query,
                const S3Credential &cred) {
-    char timestr[64];
+    char timestr[65];
     char tmpbuf[20];  // SHA_DIGEST_LENGTH is 20
     string typestr;
 
@@ -139,7 +139,7 @@ bool SignPUTv2(HeaderContent *h, string path_with_query,
 
 bool SignPOSTv2(HeaderContent *h, string path_with_query,
                 const S3Credential &cred) {
-    char timestr[64];
+    char timestr[65];
     char tmpbuf[20];  // SHA_DIGEST_LENGTH is 20
     // string md5str;
 

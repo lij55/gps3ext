@@ -43,7 +43,7 @@ bool gethttpnow(char datebuf[65]) {  //('D, d M Y H:i:s T')
     }
     time(&t);
     localtime_r(&t, &tm_info);
-    strftime(datebuf, 64, "%a, %d %b %Y %H:%M:%S %z", &tm_info);
+    strftime(datebuf, 65, "%a, %d %b %Y %H:%M:%S %z", &tm_info);
     return true;
 }
 
